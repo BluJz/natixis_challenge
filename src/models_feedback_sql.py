@@ -15,6 +15,15 @@ session = Session()
 Base = declarative_base()
 
 
+class ModelsDB(Base):
+    __tablename__ = "models"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model_name = Column(String)
+    bond_issuer_name = Column(String)
+    amount = Column(Integer)
+    acceptation_status = Column(String)
+
+
 # Define a Feedback table
 class Feedback(Base):
     __tablename__ = "feedback"

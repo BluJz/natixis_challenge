@@ -1,4 +1,11 @@
 import streamlit as st
+import pandas as pd
+from sqlalchemy import create_engine
+
+from models_feedback_sql import Feedback
+from sqlalchemy.orm import sessionmaker
+
+import mlflow
 
 
 def set_header_color():
@@ -49,5 +56,77 @@ def page4():
         st.write(f"Validation Metric Score: {validation_metric}")
 
 
+def page4_bis():
+    # models_db_uri = "sqlite:///src/models/models.db"
+    # engine = create_engine(models_db_uri)
+
+    # Set the tracking URI to your mlruns.db file
+    mlflow.set_tracking_uri("sqlite:///src/models/mlruns.db")
+
+    st.title("Models Insights")
+
+    # if st.button("Visualize updated database: "):
+    #     Session = sessionmaker(bind=engine)
+    #     with Session() as session:
+    #         # Query the database to retrieve feedback data
+    #         models_data = session.query(Feedback).all()
+
+    #         feedback_df = pd.DataFrame(
+    #             [
+    #                 (f.model_name, f.bond_issuer_name, f.amount, f.acceptation_status)
+    #                 for f in feedback_data
+    #             ],
+    #             columns=[
+    #                 "Model Name",
+    #                 "Bond Issuer Name",
+    #                 "Amount",
+    #                 "Acceptation Status",
+    #             ],
+    #         )
+    #     st.table(feedback_df)
+    if st.button("Visualize updated database: "):
+        # List all experiments available in the tracking database
+        experiment_ids = mlflow.search_runs().experiment_id.unique()
+
+        # Choose an experiment ID (you can choose the one you've been using)
+        experiment_id = experiment_ids[0]
+
+        # Query the runs within the chosen experiment
+        # runs = mlflow.search_runs(experiment_ids=[experiment_id])
+        runs = mlflow.search_runs(
+            experiment_ids=[experiment_id], filter_string="", order_by=["end_time DESC"]
+        )
+        selected_columns = [
+            "run_id",
+            "end_time",
+        ]  # Add the columns you're interested in here
+        selected_columns += [
+            col
+            for col in runs.columns
+            if col.startswith("params.") or col.startswith("metrics.")
+        ]
+        runs = runs[selected_columns]
+        # Get the names of the columns in the DataFrame
+        # column_names = runs.columns.tolist()
+
+        # Define a CSS class to apply text wrapping to table cells
+        table_style = """
+        <style>
+            .stDataFrame {
+                white-space: normal;
+            }
+        </style>
+        """
+
+        # Display just the column names
+        # st.write("Column Names:")
+        # st.write(column_names)
+
+        # Display the runs as a DataFrame
+        st.write("MLflow Runs:")
+        st.write(table_style, unsafe_allow_html=True)
+        st.dataframe(runs)
+
+
 # Run the page function
-page4()
+page4_bis()
