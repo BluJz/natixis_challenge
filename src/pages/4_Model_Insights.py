@@ -56,7 +56,7 @@ def page4():
         st.write(f"Validation Metric Score: {validation_metric}")
 
 
-def page4_bis():
+def main():
     # models_db_uri = "sqlite:///src/models/models.db"
     # engine = create_engine(models_db_uri)
 
@@ -131,4 +131,5 @@ def page4_bis():
 
 
 # Run the page function
-page4_bis()
+if __name__ == "__main__":
+    main()

@@ -34,7 +34,7 @@ def get_bond_statistics(bond_name):
     return {"Yield": "5%", "Rating": "AAA"}
 
 
-def page1():
+def main():
     set_header_color()
     st.title("Company Bond Recommender")
     st.write(
@@ -72,4 +72,5 @@ def page1():
 
 
 # Run the page function
-page1()
+if __name__ == "__main__":
+    main()

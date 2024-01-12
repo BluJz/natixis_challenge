@@ -34,7 +34,7 @@ def get_company_statistics(company_name):
     return {"Revenue": "200M", "Employees": "1000"}
 
 
-def page2():
+def main():
     set_header_color()
     st.title("ISIN-Based Company Recommender")
     st.write("Enter an ISIN code and get recommended companies")
@@ -70,4 +70,5 @@ def page2():
 
 
 # Run the page function
-page2()
+if __name__ == "__main__":
+    main()

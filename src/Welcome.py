@@ -1,12 +1,17 @@
 import streamlit as st
 import pandas as pd
 import folium
-from pages import page1, page2, page3, page4
+
+# from pages import page1, page2, page3, page4
+
+# APP_TITLE = "Natixis Business Challenge"
+# APP_SUB_TITLE = "Leverage flow business information to grow market making activity"
+
+# st.set_page_config(APP_TITLE, page_icon="📊")
+st.set_page_config("Natixis Business Challenge", page_icon="📊")
 
 APP_TITLE = "Natixis Business Challenge"
 APP_SUB_TITLE = "Leverage flow business information to grow market making activity"
-
-st.set_page_config(APP_TITLE, page_icon="📊")
 
 
 # Fonction pour injecter du CSS personnalisé
@@ -43,12 +48,12 @@ st.subheader(
 )
 
 # Create a dictionary to map page names to page functions
-pages = {
-    "Page 1": page1.page1,
-    "Page 2": page2.page2,
-    "Page 3": page3.page3,
-    "Page 4": page4.page4,
-}
+# pages = {
+#     "Page 1": page1.main,
+#     "Page 2": page2.main,
+#     "Page 3": page3.main,
+#     "Page 4": page4.main,
+# }
 
 # Create a sidebar navigation menu
 # st.sidebar.title("Navigation")

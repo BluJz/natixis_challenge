@@ -36,7 +36,7 @@ def set_header_color():
     )
 
 
-def page3():
+def main():
     feedback_db_uri = "sqlite:///src/models/feedback.db"
     engine = create_engine(feedback_db_uri)
 
@@ -93,5 +93,4 @@ def page3():
 
 
 if __name__ == "__main__":
-    #    st.write(test_function())
-    page3()
+    main()
