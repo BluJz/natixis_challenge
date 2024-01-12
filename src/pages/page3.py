@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from sqlalchemy import create_engine
 
 from models_feedback_sql import Feedback
@@ -65,6 +66,26 @@ def page3():
             # Commit the transaction to save the new feedback entry to the database
             session.commit()
         st.success("Feedback submitted successfully")
+
+    if st.button("Visualize updated database: "):
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Query the database to retrieve feedback data
+            feedback_data = session.query(Feedback).all()
+
+            feedback_df = pd.DataFrame(
+                [
+                    (f.model_name, f.bond_issuer_name, f.amount, f.acceptation_status)
+                    for f in feedback_data
+                ],
+                columns=[
+                    "Model Name",
+                    "Bond Issuer Name",
+                    "Amount",
+                    "Acceptation Status",
+                ],
+            )
+        st.table(feedback_df)
 
 
 if __name__ == "__main__":
