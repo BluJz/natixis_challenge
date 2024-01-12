@@ -8,26 +8,32 @@ APP_SUB_TITLE = "Leverage flow business information to grow market making activi
 
 st.set_page_config(APP_TITLE, page_icon="📊")
 
+
 # Fonction pour injecter du CSS personnalisé
 def local_css(file_name):
     with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 
 # Utiliser cette fonction pour définir la couleur des en-têtes
 def set_header_color():
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         h1, h2, h3, h4, h5, h6 {
             color: #5F259F; /* Couleur violet Pantone */
         }
         </style>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 # Appliquer la couleur des en-têtes
 set_header_color()
 
 # Add this line to include an image banner
-st.image("banner.png", use_column_width=True) 
+st.image("banner.png", use_column_width=True)
 
 st.title(APP_TITLE)
 st.caption(APP_SUB_TITLE)
@@ -50,5 +56,3 @@ pages = {
 
 # Display the selected page
 # pages[selected_page]()
-
-

@@ -1,6 +1,7 @@
 import streamlit as st
 from wrapper import set_header_color
 
+
 # Placeholder functions for backend logic
 def get_company_statistics(company_short_name):
     # Replace with actual logic to fetch company statistics
