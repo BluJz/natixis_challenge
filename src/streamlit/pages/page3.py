@@ -17,7 +17,7 @@ import sqlite3
 # - We create an SQL table to have feedback over the models
 
 
-def main():
+def page3():
     st.title("Model used for recommenders and clustering")
 
     # Create a connection to the SQLite database
@@ -45,5 +45,5 @@ def main():
     conn.close()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__page3__":
+    page3()
