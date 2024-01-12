@@ -1,4 +1,5 @@
 import streamlit as st
+from wrapper import set_header_color
 
 # Placeholder functions for backend logic
 def get_isin_statistics(isin_code):
@@ -14,6 +15,7 @@ def get_company_statistics(company_name):
     return {"Revenue": "200M", "Employees": "1000"}
 
 def page2():
+    set_header_color()
     st.title("ISIN-Based Company Recommender")
     st.write("Enter an ISIN code and get recommended companies")
 

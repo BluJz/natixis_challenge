@@ -1,5 +1,5 @@
 import streamlit as st
-
+from wrapper import set_header_color
 
 # Placeholder functions for backend logic
 def get_company_statistics(company_short_name):
@@ -22,6 +22,7 @@ def get_bond_statistics(bond_name):
 
 
 def page1():
+    set_header_color()
     st.title("Company Bond Recommender")
     st.write(
         "Enter the name of a company and get the most recommended bonds for this client"

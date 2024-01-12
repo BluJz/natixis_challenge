@@ -1,5 +1,6 @@
 import streamlit as st
 import sqlite3
+from wrapper import set_header_color
 
 # Assumptions:
 # - Models we build are saved in folders inside the 'models' folder with the following structure:
@@ -18,6 +19,7 @@ import sqlite3
 
 
 def page3():
+    set_header_color()
     st.title("Model used for recommenders and clustering")
 
     # Create a connection to the SQLite database

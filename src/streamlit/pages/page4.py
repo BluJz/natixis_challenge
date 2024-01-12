@@ -1,4 +1,5 @@
 import streamlit as st
+from wrapper import set_header_color
 
 # Placeholder functions for backend logic
 def update_model():
@@ -15,6 +16,7 @@ def get_validation_metric(model_name):
     return 0.93  # Example return value
 
 def page4():
+    set_header_color()
     st.title("Models Insights")
 
     # Button to update the model
