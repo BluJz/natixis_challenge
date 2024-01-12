@@ -11,4 +11,6 @@ if __name__ == "__main__":
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
 
-    st.subheader('Welcome ! \nThe purpose of this Streamlit application is to provide a friendly UI to have recommendations on bonds and investors, actionnable insights on past trading data and information about the model used.')
+    st.subheader(
+        "Welcome ! \nThe purpose of this Streamlit application is to provide a friendly UI to have recommendations on bonds and investors, actionnable insights on past trading data and information about the model used."
+    )
