@@ -122,3 +122,4 @@ def display_lowest_values(df, variable, x):
 
 if __name__ == "__main__":
     st.title("Trading insights")
+    st.subheader("Données aggrégées par jour")

@@ -197,3 +197,4 @@ def plot_monthly():
 
 if __name__ == "__main__":
     st.title("Investor recommander")
+    st.subheader("Données aggrégées par jour")

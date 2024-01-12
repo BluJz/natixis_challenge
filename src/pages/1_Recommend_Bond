@@ -91,3 +91,4 @@ def display_lowest_values(df, variable, x):
 
 if __name__ == "__main__":
     st.title("Bond recommander")
+    st.subheader("Données aggrégées par jour")
