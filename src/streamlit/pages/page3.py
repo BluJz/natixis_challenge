@@ -1,6 +1,5 @@
 import streamlit as st
 import sqlite3
-from wrapper import set_header_color
 
 # Assumptions:
 # - Models we build are saved in folders inside the 'models' folder with the following structure:
@@ -17,6 +16,14 @@ from wrapper import set_header_color
 
 # - We create an SQL table to have feedback over the models
 
+def set_header_color():
+    st.markdown("""
+        <style>
+        h1, h2, h3, h4, h5, h6 {
+            color: #5F259F; /* Violet Pantone color */
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
 def page3():
     set_header_color()

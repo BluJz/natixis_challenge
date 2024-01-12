@@ -1,5 +1,13 @@
 import streamlit as st
-from wrapper import set_header_color
+
+def set_header_color():
+    st.markdown("""
+        <style>
+        h1, h2, h3, h4, h5, h6 {
+            color: #5F259F; /* Violet Pantone color */
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
 # Placeholder functions for backend logic
 def get_company_statistics(company_short_name):
