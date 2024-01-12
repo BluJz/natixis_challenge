@@ -9,6 +9,7 @@ def set_header_color():
         </style>
         """, unsafe_allow_html=True)
 
+
 # Placeholder functions for backend logic
 def get_company_statistics(company_short_name):
     # Replace with actual logic to fetch company statistics
