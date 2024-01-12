@@ -7,18 +7,18 @@ db_file_path = os.path.abspath("src/stats/stats.db")
 # Create or connect to the SQLite database
 print(db_file_path)
 conn = sqlite3.connect(db_file_path)
-conn.close()
 
-# Create a table to store user feedback
-# cursor = conn.cursor()
-# cursor.execute(
-#     """
-#     CREATE TABLE IF NOT EXISTS user_feedback (
-#         user_id INTEGER PRIMARY KEY,
-#         model_name TEXT,
-#         recommendation_status BOOLEAN,
-#         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-#     )
-# """
-# )
-# conn.commit()
+cursor = conn.cursor()
+
+# SQL query
+query = "SELECT name FROM sqlite_master WHERE type='table';"  # Replace with your SQL query
+cursor.execute(query)
+
+# Fetch the results
+results = cursor.fetchall()
+
+for row in results:
+    print(row)
+
+cursor.close()
+conn.close()
