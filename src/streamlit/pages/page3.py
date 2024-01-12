@@ -1,7 +1,9 @@
 import streamlit as st
-import sqlite3
 from sqlalchemy import create_engine
+
 from models_feedback_sql import Feedback
+
+# from test import test_function
 from sqlalchemy.orm import sessionmaker
 
 # Assumptions:
@@ -66,4 +68,5 @@ def page3():
 
 
 if __name__ == "__main__":
+    #    st.write(test_function())
     page3()
