@@ -4,7 +4,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
-import lightgbm as lgb
+
 import mlflow
 import mlflow.sklearn
 
@@ -17,10 +17,10 @@ models = {
     "Decision Tree Regressor": DecisionTreeRegressor(),
     "Random Forest Regressor": RandomForestRegressor(),
     "XGBoost Regressor": XGBRegressor(),
-    "LightGBM Regressor": lgb.LGBMRegressor(),
 }
 
 # Save models using MLflow
+mlflow.set_tracking_uri("sqlite:///src/models/mlflow.db")
 for model_name, model in models.items():
     with mlflow.start_run() as run:
         model.fit(X, y)
