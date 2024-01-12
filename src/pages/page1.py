@@ -1,13 +1,17 @@
 import streamlit as st
 
+
 def set_header_color():
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         h1, h2, h3, h4, h5, h6 {
             color: #5F259F; /* Violet Pantone color */
         }
         </style>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # Placeholder functions for backend logic
@@ -43,7 +47,7 @@ def page1():
     # Column 1: Company Search and Statistics
     with col1:
         company_short_name = st.text_input("Enter Company Short Name")
-        run_button = st.button("Run Recommender")
+        run_button = st.button("Run Recommender", key="company_to_isin_recommender")
 
         if run_button and company_short_name:
             st.write("Company Statistics:")

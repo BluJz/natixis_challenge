@@ -84,7 +84,9 @@ def page4_bis():
     #             ],
     #         )
     #     st.table(feedback_df)
-    if st.button("Visualize updated database: "):
+
+    mlflow_db_button = st.button("Visualize updated database: ", key="mlflow_db_viz")
+    if mlflow_db_button:
         # List all experiments available in the tracking database
         experiment_ids = mlflow.search_runs().experiment_id.unique()
 

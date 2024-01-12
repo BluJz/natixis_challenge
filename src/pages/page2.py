@@ -45,7 +45,7 @@ def page2():
     # Column 1: ISIN Input and Statistics
     with col1:
         isin_code = st.text_input("Enter ISIN Code")
-        run_button = st.button("Run Recommender")
+        run_button = st.button("Run Recommender", key="isin_to_company_recommender")
 
         if run_button and isin_code:
             st.write("ISIN Code Statistics:")

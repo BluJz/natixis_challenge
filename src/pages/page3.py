@@ -49,7 +49,8 @@ def page3():
     amount = st.number_input("Amount")
     acceptation_status = st.checkbox("Accept (if not checked: Declined)")
 
-    if st.button("Submit Feedback"):
+    feedback_button = st.button("Submit Feedback", key="feedback")
+    if feedback_button:
         Session = sessionmaker(bind=engine)
 
         with Session() as session:
@@ -67,7 +68,10 @@ def page3():
             session.commit()
         st.success("Feedback submitted successfully")
 
-    if st.button("Visualize updated database: "):
+    update_viz_feedback_button = st.button(
+        "Visualize updated database: ", key="updateviz_feedback"
+    )
+    if update_viz_feedback_button:
         Session = sessionmaker(bind=engine)
         with Session() as session:
             # Query the database to retrieve feedback data
