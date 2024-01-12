@@ -13,7 +13,7 @@ def get_company_statistics(company_name):
     # Replace with actual logic to fetch company statistics
     return {"Revenue": "200M", "Employees": "1000"}
 
-def page1():
+def page2():
     st.title("ISIN-Based Company Recommender")
     st.write("Enter an ISIN code and get recommended companies")
 
@@ -47,4 +47,4 @@ def page1():
                 st.write("---")
 
 # Run the page function
-page1()
+page2()
