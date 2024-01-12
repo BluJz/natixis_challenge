@@ -1,21 +1,31 @@
 import streamlit as st
 
+
 # Placeholder functions for backend logic
 def get_company_statistics(company_short_name):
     # Replace with actual logic to fetch company statistics
     return {"Revenue": "100M", "Employees": "500"}
 
+
 def get_bond_recommendations(company_short_name):
     # Replace with actual logic to get bond recommendations
-    return [("Bond A", "High yield"), ("Bond B", "Stable investment"), ("Bond C", "Low risk")]
+    return [
+        ("Bond A", "High yield"),
+        ("Bond B", "Stable investment"),
+        ("Bond C", "Low risk"),
+    ]
+
 
 def get_bond_statistics(bond_name):
     # Replace with actual logic to fetch bond statistics
     return {"Yield": "5%", "Rating": "AAA"}
 
+
 def page1():
     st.title("Company Bond Recommender")
-    st.write("Enter the name of a company and get the most recommended bonds for this client")
+    st.write(
+        "Enter the name of a company and get the most recommended bonds for this client"
+    )
 
     # Layout: Two columns
     col1, col2 = st.columns(2)
@@ -24,7 +34,7 @@ def page1():
     with col1:
         company_short_name = st.text_input("Enter Company Short Name")
         run_button = st.button("Run Recommender")
-        
+
         if run_button and company_short_name:
             st.write("Company Statistics:")
             company_stats = get_company_statistics(company_short_name)
@@ -45,6 +55,7 @@ def page1():
                 for key, value in bond_stats.items():
                     st.write(f"{key}: {value}")
                 st.write("---")
+
 
 # Run the page function
 page1()
