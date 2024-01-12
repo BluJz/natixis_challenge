@@ -2,6 +2,8 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+import os
+
 # Create a SQLAlchemy engine and session
 engine = create_engine(
     "sqlite:///src/models/feedback.db"
@@ -20,7 +22,7 @@ class Feedback(Base):
     model_name = Column(String)
     bond_issuer_name = Column(String)
     amount = Column(Integer)
-    acceptation_status = Column(bool)
+    acceptation_status = Column(String)
 
 
 # Create the table (if it doesn't exist)

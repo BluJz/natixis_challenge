@@ -1,13 +1,17 @@
 import streamlit as st
 
+
 def set_header_color():
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         h1, h2, h3, h4, h5, h6 {
             color: #5F259F; /* Violet Pantone color */
         }
         </style>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # Placeholder functions for backend logic
