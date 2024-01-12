@@ -43,5 +43,7 @@ def page3():
 
     # Close the database connection
     conn.close()
-    
-page3()
+
+
+if __name__ == "__main__":
+    page3()
