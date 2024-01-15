@@ -3,7 +3,7 @@ import os
 
 def sql_querier(query):
     # Get the absolute path to the database file
-    db_file_path = os.path.abspath("src/stats/stats.db")
+    db_file_path = os.path.abspath("src\\pages\\natixis.db")
 
     # Create or connect to the SQLite database
     conn = sqlite3.connect(db_file_path)
@@ -16,8 +16,10 @@ def sql_querier(query):
     # Fetch the results
     results = cursor.fetchall()
 
-    for row in results:
-        print(row)
+    #for row in results:
+   #     print(row)
 
     cursor.close()
     conn.close()
+
+    return results
