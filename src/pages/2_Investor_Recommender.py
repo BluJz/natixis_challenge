@@ -1,5 +1,6 @@
 import streamlit as st
-
+from sql_querier import sql_querier
+import pandas as pd
 
 def set_header_color():
     st.markdown(
@@ -24,8 +25,17 @@ def set_header_color():
 
 # Placeholder functions for backend logic
 def get_isin_statistics(isin_code):
-    # Replace with actual logic to fetch ISIN code statistics
-    return {"Market": "NYSE", "Sector": "Technology"}
+    query = f"""SELECT 
+    (SELECT SUM(Total_Traded_Volume) FROM ma_table WHERE ISIN = "{isin_code}") AS Total_Volume,
+    sub.MidPrice,
+    sub.Rating_Moodys AS Risk
+    FROM 
+    (SELECT MidPrice, Rating_Moodys, Deal_Date
+    FROM ma_table
+    WHERE ISIN = "{isin_code}"
+    ORDER BY Deal_Date DESC
+    LIMIT 1) sub;"""
+    return sql_querier(query)
 
 
 def get_company_recommendations(isin_code):
@@ -58,8 +68,14 @@ def main():
         if run_button and isin_code:
             st.subheader("ISIN Code Statistics:")
             isin_stats = get_isin_statistics(isin_code)
-            for key, value in isin_stats.items():
-                st.write(f"{key}: {value}")
+            if isin_stats is not None:
+                donnees = []
+                for item in isin_stats:
+                    donnees += [item]
+                df = pd.DataFrame(donnees, columns=['Total Traded Volume', 'Mid Price($)', 'Rating'])
+                st.table(df)
+            else :
+                st.write("Not available")
 
     # Column 2: Company Recommendations and Statistics
     with col2:
