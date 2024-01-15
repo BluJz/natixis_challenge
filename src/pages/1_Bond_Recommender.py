@@ -16,7 +16,15 @@ def set_header_color():
 
 # Placeholder functions for backend logic
 def get_company_statistics(company_short_name):
-    # Replace with actual logic to fetch company statistics
+    query = f"""SELECT 
+    ISIN, 
+    Rating_Moodys AS Risk, 
+    B_price * Total_Requested_Volume AS "Amount traded"
+    FROM ma_table
+    WHERE company_short_name = {company_short_name}
+    ORDER BY Deal_Date DESC
+    LIMIT 3;"""
+    sql_querier(query)
     return {"Revenue": "100M", "Employees": "500"}
 
 

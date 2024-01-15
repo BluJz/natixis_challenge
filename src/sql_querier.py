@@ -6,7 +6,6 @@ def sql_querier(query):
     db_file_path = os.path.abspath("src/stats/stats.db")
 
     # Create or connect to the SQLite database
-    print(db_file_path)
     conn = sqlite3.connect(db_file_path)
 
     cursor = conn.cursor()
