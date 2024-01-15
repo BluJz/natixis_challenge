@@ -6,5 +6,6 @@ folium
 streamlit
 sqlalchemy
 pytest
+mlflow
 pytest-black
 pytest-flake8

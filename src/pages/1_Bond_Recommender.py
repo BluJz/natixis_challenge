@@ -1,5 +1,6 @@
 import streamlit as st
 from sql_querier import sql_querier
+import pandas as pd
 
 def set_header_color():
     st.markdown(
@@ -21,11 +22,10 @@ def get_company_statistics(company_short_name):
     Rating_Moodys AS Risk, 
     B_price * Total_Requested_Volume AS "Amount traded"
     FROM ma_table
-    WHERE company_short_name = {company_short_name}
+    WHERE ma_table.company_short_name = "{company_short_name}"
     ORDER BY Deal_Date DESC
     LIMIT 3;"""
-    sql_querier(query)
-    return {"Revenue": "100M", "Employees": "500"}
+    return sql_querier(query)
 
 
 def get_bond_recommendations(company_short_name):
@@ -60,8 +60,15 @@ def main():
         if run_button and company_short_name:
             st.write("Company Statistics:")
             company_stats = get_company_statistics(company_short_name)
-            for key, value in company_stats.items():
-                st.write(f"{key}: {value}")
+            if company_stats is not None:
+                donnees = []
+                for item in company_stats:
+                    donnees += [item]
+                df = pd.DataFrame(donnees, columns=['ISIN', 'Rating', 'Montant'])
+                st.write("3 most recent client transactions:")
+                st.table(df)
+            else :
+                st.write("Not available")
 
     # Column 2: Bond Recommendations and Statistics
     with col2:
