@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 import matplotlib.pyplot as plt
 from PIL import Image
 import mlflow
+from st_aggrid import AgGrid
 
 
 def set_header_color():
@@ -14,7 +15,7 @@ def set_header_color():
         """
         <style>
         h1, h2, h3, h4, h5, h6 {
-            color: #5F259F; /* Violet Pantone color */
+            color: #B981EC; /* Violet Pantone color */
         }
         </style>
         """,
@@ -22,24 +23,8 @@ def set_header_color():
     )
 
 
-# Placeholder functions for backend logic
-def update_model():
-    # Replace with actual logic to update the model in cache
-    # This function should update the model and return the new model name and validation metric
-    return "New Model Name", 0.95  # Example return values
-
-
-def get_current_model_name():
-    # Replace with actual logic to get the current model name
-    return "Current Model Name"
-
-
-def get_validation_metric(model_name):
-    # Replace with actual logic to get the validation metric for the given model
-    return 0.93  # Example return value
-
-
 def get_and_display_column_names():
+    """Get and displays the columns available in the src/models.mlruns database when called directly in the streamlit app."""
     # Connect to the MLflow tracking server
     mlflow.set_tracking_uri("sqlite:///src/models/mlruns.db")
 
@@ -58,45 +43,8 @@ def get_and_display_column_names():
     mlflow.end_run()
 
 
-def get_and_display_mlruns():
-    # Connect to the 'mlruns.db' database
-    conn = sqlite3.connect("src/models/mlruns.db")
-    cursor = conn.cursor()
-
-    # Specify the SQL query to retrieve the "save_model_for_usage" tag and other columns
-    sql_query = """
-    SELECT 
-        runs.run_uuid, 
-        runs.end_time, 
-        tags.key AS tag_key, 
-        tags.value AS tag_value
-    FROM runs
-    LEFT JOIN tags ON runs.run_uuid = tags.run_uuid
-    WHERE tags.key = 'save_model_for_usage'
-    """
-
-    # Execute the query and fetch the results into a DataFrame
-    runs_with_save_tag = pd.read_sql_query(sql_query, conn)
-
-    # Define a CSS class to apply text wrapping to table cells
-    table_style = """
-    <style>
-        .stDataFrame {
-            white-space: normal;
-        }
-    </style>
-    """
-
-    # Display the runs with the "save_model_for_usage" tag in the Streamlit interface
-    st.title('Runs with "save_model_for_usage" Tag')
-    st.write(table_style, unsafe_allow_html=True)
-    st.dataframe(runs_with_save_tag)
-
-    # Close the database connection
-    conn.close()
-
-
-def get_and_display_all_models():
+def get_and_display_sidebar():
+    """Gets and displays in the form of a sidebar to select the models in the mlruns database directly in the streamlit app."""
     # Connect to the 'mlruns.db' database
     conn = sqlite3.connect("src/models/mlruns.db")
     cursor = conn.cursor()
@@ -115,11 +63,8 @@ def get_and_display_all_models():
     if not models_data:
         models_data = None
 
-    # Streamlit UI layout
-    st.title("Model Explorer")
-
     # Sidebar with model selection
-    st.sidebar.header("Select a Model")
+    st.sidebar.header("Select a model: ")
     models = models_data
     if models:
         selected_model = st.sidebar.selectbox(
@@ -128,63 +73,27 @@ def get_and_display_all_models():
     else:
         st.sidebar.write("No available models.")
 
-    # Display information about the selected model
-    if models:
-        st.subheader("Selected Model Information")
-        st.write(f"Model ID: {selected_model[0]}")
-        st.write(f"End Time: {selected_model[1]}")
-        # You can add more information about the selected model here
-
     # Close the database connection
     conn.close()
 
-
-# Function to get unique model identifiers based on model name and training date
-def get_unique_model_identifiers(mlruns_conn):
-    cursor = mlruns_conn.cursor()
-    cursor.execute("SELECT DISTINCT model_name, end_time FROM runs")
-    models = cursor.fetchall()
-    unique_identifiers = [f"{model[0]} - {model[1]}" for model in models]
-    return unique_identifiers
+    return selected_model[0], selected_model[3]
 
 
-# Function to get training metrics for a selected model
-def get_training_metrics(selected_identifier, mlruns_conn):
-    model_name, end_time = selected_identifier.split(" - ")
-    cursor = mlruns_conn.cursor()
-    cursor.execute(
-        f"SELECT * FROM runs WHERE model_name = '{model_name}' AND end_time = '{end_time}'"
-    )
-    runs_data = cursor.fetchall()
-    if runs_data:
-        columns = [desc[0] for desc in cursor.description]
-        df = pd.DataFrame(runs_data, columns=columns)
-        return df[["accuracy", "loss"]]
+def get_and_display_documentation(selected_model_name):
+    # Create a dictionary to map model names to Wikipedia URLs
+    model_wikipedia_links = {
+        "Random Forest Regressor": "https://en.wikipedia.org/wiki/Random_forest",
+        "Decision Tree Regressor": "https://en.wikipedia.org/wiki/Decision_tree_learning",
+        "XGBoost Regressor": "https://en.wikipedia.org/wiki/XGBoost",
+        "Linear Regression": "https://en.wikipedia.org/wiki/Linear_regression",
+    }
+
+    # Display the selected model's Wikipedia link
+    if selected_model_name in model_wikipedia_links:
+        wikipedia_url = model_wikipedia_links[selected_model_name]
+        st.markdown(f"**[Documentation for {selected_model_name}]({wikipedia_url})**")
     else:
-        return None
-
-
-# Function to get model architecture image and description
-def get_model_info(selected_identifier):
-    # You can customize this function to fetch the model architecture image and description
-    # based on the selected model name from your own data source.
-    model_description = "Random Forest with 100 estimators"  # Example description
-    model_image = Image.open("model_architecture.png")  # Example image
-    return model_description, model_image
-
-
-# Function to get user feedback metrics
-def get_user_feedback_metrics(selected_identifier, feedback_conn):
-    model_name, _ = selected_identifier.split(" - ")
-    cursor = feedback_conn.cursor()
-    cursor.execute(f"SELECT * FROM feedback WHERE model_name = '{model_name}'")
-    feedback_data = cursor.fetchall()
-    if feedback_data:
-        columns = [desc[0] for desc in cursor.description]
-        df = pd.DataFrame(feedback_data, columns=columns)
-        return df
-    else:
-        return None
+        st.write("There is no available documentation for the moment.")
 
 
 def display_progress_bar(title, progress_value):
@@ -208,48 +117,90 @@ def display_progress_bar(title, progress_value):
     )
 
 
-def main_2():
-    # Connect to the mlruns.db and feedback.db databases
-    mlruns_conn = sqlite3.connect("mlruns.db")
-    feedback_conn = sqlite3.connect("feedback.db")
+def get_and_display_params(selected_model_id):
+    # Connect to the 'mlruns.db' database
+    conn = sqlite3.connect("src/models/mlruns.db")
+    cursor = conn.cursor()
 
-    # Streamlit UI layout
-    st.title("Model Explorer")
+    # Query the parameters for the selected run
+    cursor.execute(
+        f"""
+        SELECT key AS Parameter, value AS Value
+        FROM params
+        WHERE run_uuid = '{selected_model_id}'
+    """
+    )
+    parameters_data = cursor.fetchall()
 
-    # Model Selection Area (Upper Left)
-    unique_identifiers = get_unique_model_identifiers(mlruns_conn)
-    selected_identifier = st.sidebar.selectbox("Select a Model", unique_identifiers)
+    # Check if parameters were found for the selected run
+    if not parameters_data:
+        st.write(f"No parameters found for run with run_uuid: {selected_model_id}")
+    else:
+        # Create a DataFrame from the retrieved parameters data
+        parameters_df = pd.DataFrame(parameters_data, columns=["Parameter", "Value"])
 
-    # Training Metrics Area (Bottom Left)
-    st.subheader("Training Metrics")
-    metrics_df = get_training_metrics(selected_identifier, mlruns_conn)
-    if metrics_df is not None:
-        for metric in metrics_df.columns:
-            st.write(f"{metric.capitalize()}:")
-            st.progress(metrics_df[metric].iloc[-1])
+        subheader_style = """
+            <style>
+            .custom-subheader {
+                font-size: 20px;  /* Adjust the font size as needed */
+                color: #EC81EA;  /* Change the color to your desired value */
+            }
+            </style>   
+        """
+        # Display the parameters in a table
+        st.write(subheader_style, unsafe_allow_html=True)
+        st.markdown(
+            "<p class='custom-subheader'>Parameters for Selected Run</p>",
+            unsafe_allow_html=True,
+        )
 
-    # Model Architecture Area (Upper Right)
-    st.subheader("Model Architecture")
-    model_description, model_image = get_model_info(selected_identifier)
-    st.image(model_image, caption=model_description, use_column_width=True)
+        # Apply custom CSS to center-align the table
+        table_style = """
+            <style>
+                .center-table {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 30vh; /* Adjust the height as needed */
+                }
+            </style>
+        """
+        st.write(table_style, unsafe_allow_html=True)
+        st.write(
+            f"<div class='center-table'>{parameters_df.to_html(index=False)}</div>",
+            unsafe_allow_html=True,
+        )
+        # st.dataframe(parameters_df)
+        # AgGrid(parameters_df)
 
-    # User Feedback Metrics Area (Bottom Right)
-    st.subheader("User Feedback Metrics")
-    feedback_metrics_df = get_user_feedback_metrics(selected_identifier, feedback_conn)
-    if feedback_metrics_df is not None:
-        st.write(feedback_metrics_df)
+    # Close the database connection
+    conn.close()
 
-    # Close database connections
-    mlruns_conn.close()
-    feedback_conn.close()
+
+def main_display_model_insights(selected_model_id, selected_model_name):
+    set_header_color()
+    st.title(f"Model insights: {selected_model_name}")
+
+    # Horizontal separator
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    get_and_display_params(selected_model_id)
+
+    get_and_display_documentation(selected_model_name)
+
+    # Horizontal separator
+    st.markdown("<hr>", unsafe_allow_html=True)
 
 
 # Run the page function
 if __name__ == "__main__":
-    get_and_display_column_names()
-    mlflow_db_button = st.button("Visualize updated database: ", key="mlflow_db_viz")
-    if mlflow_db_button:
-        get_and_display_mlruns()
-    get_and_display_all_models()
+    # get_and_display_column_names()
+    # mlflow_db_button = st.button("Visualize updated database: ", key="mlflow_db_viz")
+    # if mlflow_db_button:
+    #     get_and_display_mlruns()
 
-    display_progress_bar("Accuracy metric", 0.56)
+    selected_model_id, selected_model_name = get_and_display_sidebar()
+
+    main_display_model_insights(selected_model_id, selected_model_name)
+
+    display_progress_bar("Training accuracy metric", 0.56)
