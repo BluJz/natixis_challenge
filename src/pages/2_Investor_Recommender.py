@@ -4,13 +4,21 @@ import streamlit as st
 def set_header_color():
     st.markdown(
         """
-        <style>
-        h1, h2, h3, h4, h5, h6 {
-            color: #5F259F; /* Violet Pantone color */
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
+    <style>
+    h1 {
+        color: #F5BBF4;
+    }
+    h2 {
+        color: #F5BBF4;
+    }
+    h3 {
+        color: #B981EC;
+    }
+    h4 {
+        color: #B981EC;
+    }
+    </style>
+    """, unsafe_allow_html=True,
     )
 
 
@@ -39,16 +47,16 @@ def main():
     st.title("ISIN-Based Company Recommender")
     st.write("Enter an ISIN code and get recommended companies")
 
+    isin_code = st.text_input("Enter ISIN Code")
+    run_button = st.button("Run Recommender", key="isin_to_company_recommender")
+
     # Layout: Two columns
     col1, col2 = st.columns(2)
 
     # Column 1: ISIN Input and Statistics
     with col1:
-        isin_code = st.text_input("Enter ISIN Code")
-        run_button = st.button("Run Recommender", key="isin_to_company_recommender")
-
         if run_button and isin_code:
-            st.write("ISIN Code Statistics:")
+            st.subheader("ISIN Code Statistics:")
             isin_stats = get_isin_statistics(isin_code)
             for key, value in isin_stats.items():
                 st.write(f"{key}: {value}")
@@ -56,7 +64,7 @@ def main():
     # Column 2: Company Recommendations and Statistics
     with col2:
         if run_button and isin_code:
-            st.write("Recommended Companies for ISIN:", isin_code)
+            st.subheader("Recommended Companies for ISIN:", isin_code)
             recommended_companies = get_company_recommendations(isin_code)
 
             for company, reason in recommended_companies:

@@ -26,13 +26,21 @@ from sqlalchemy.orm import sessionmaker
 def set_header_color():
     st.markdown(
         """
-        <style>
-        h1, h2, h3, h4, h5, h6 {
-            color: #5F259F; /* Violet Pantone color */
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
+    <style>
+    h1 {
+        color: #F5BBF4;
+    }
+    h2 {
+        color: #F5BBF4;
+    }
+    h3 {
+        color: #B981EC;
+    }
+    h4 {
+        color: #B981EC;
+    }
+    </style>
+    """, unsafe_allow_html=True,
     )
 
 
