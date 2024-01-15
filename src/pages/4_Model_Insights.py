@@ -7,7 +7,6 @@ from sqlalchemy.orm import sessionmaker
 import matplotlib.pyplot as plt
 from PIL import Image
 import mlflow
-from st_aggrid import AgGrid
 
 
 def set_header_color():
@@ -100,11 +99,11 @@ def display_progress_bar(title, progress_value):
     progress_value_percentage = int(progress_value * 100)
     # Set a custom CSS style for the progress bar
     progress_bar_style = (
-        f"background: linear-gradient(90deg, #82CAFF {progress_value_percentage}%, transparent {progress_value_percentage}%);"
+        f"background: linear-gradient(90deg, #F5BBF4 {progress_value_percentage}%, transparent {progress_value_percentage}%);"
         "border-radius: 5px;"
         "height: 30px;"
         "position: relative;"  # Add position for overlaying text
-        "box-shadow: 0px 0px 0px 1px #82CAFF inset;"  # Add a border of the same color
+        "box-shadow: 0px 0px 0px 1px #F5BBF4 inset;"  # Add a border of the same color
     )
 
     # Display the title and styled progress bar
@@ -143,7 +142,7 @@ def get_and_display_params(selected_model_id):
             <style>
             .custom-subheader {
                 font-size: 20px;  /* Adjust the font size as needed */
-                color: #EC81EA;  /* Change the color to your desired value */
+                color: #F5BBF4;  /* Change the color to your desired value */
             }
             </style>   
         """
@@ -161,7 +160,6 @@ def get_and_display_params(selected_model_id):
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    height: 30vh; /* Adjust the height as needed */
                 }
             </style>
         """
@@ -170,8 +168,8 @@ def get_and_display_params(selected_model_id):
             f"<div class='center-table'>{parameters_df.to_html(index=False)}</div>",
             unsafe_allow_html=True,
         )
-        # st.dataframe(parameters_df)
-        # AgGrid(parameters_df)
+
+        st.write("#")
 
     # Close the database connection
     conn.close()
