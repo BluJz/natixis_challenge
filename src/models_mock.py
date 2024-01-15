@@ -19,6 +19,9 @@ models = {
     "XGBoost Regressor": XGBRegressor(),
 }
 
+# Connect to the MLflow tracking server
+mlflow.set_tracking_uri("sqlite:///src/models/mlruns.db")
+
 # Loop through models and log runs with detailed information
 for model_name, model in models.items():
     with mlflow.start_run() as run:
@@ -47,3 +50,9 @@ for model_name, model in models.items():
         mlflow.log_metric("mean_squared_error", mse)
         mlflow.log_metric("root_mean_squared_error", rmse)
         mlflow.log_metric("r_squared", r_squared)
+
+        interesting_tag_rd = np.random.randint(2)
+        if interesting_tag_rd == 1:
+            mlflow.set_tag("save_model_for_usage", "true")
+        else:
+            mlflow.set_tag("save_model_for_usage", "false")
