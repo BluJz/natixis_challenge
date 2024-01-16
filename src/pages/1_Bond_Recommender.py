@@ -2,6 +2,7 @@ import streamlit as st
 from sql_querier import sql_querier
 import pandas as pd
 
+
 def set_header_color():
     st.markdown(
         """
@@ -64,10 +65,10 @@ def main():
                 donnees = []
                 for item in company_stats:
                     donnees += [item]
-                df = pd.DataFrame(donnees, columns=['ISIN', 'Rating', 'Montant'])
+                df = pd.DataFrame(donnees, columns=["ISIN", "Rating", "Montant"])
                 st.write("3 most recent client transactions:")
                 st.table(df)
-            else :
+            else:
                 st.write("Not available")
 
     # Column 2: Bond Recommendations and Statistics
@@ -84,6 +85,8 @@ def main():
                 for key, value in bond_stats.items():
                     st.write(f"{key}: {value}")
                 st.write("---")
+
+def request_
 
 
 # Run the page function

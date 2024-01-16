@@ -1,11 +1,6 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
-from sqlalchemy import create_engine
-from models_feedback_sql import Feedback
-from sqlalchemy.orm import sessionmaker
-import matplotlib.pyplot as plt
-from PIL import Image
 import mlflow
 
 
@@ -175,9 +170,118 @@ def get_and_display_params(selected_model_id):
     conn.close()
 
 
+def get_feedback(selected_model_id):
+    try:
+        # Connect to the 'feedback.db' database
+        conn = sqlite3.connect("src/models/fake_feedback.db")
+        cursor = conn.cursor()
+
+        # Query the rows with the specified 'run_uuid'
+        cursor.execute(
+            f"""
+            SELECT COUNT(*) AS num_rows, SUM(amount) AS total_amount, 
+                   (SUM(acception_status) * 100.0 / COUNT(*)) AS acceptance_percentage
+            FROM feedback
+            WHERE run_uuid = ?
+        """,
+            (selected_model_id,),
+        )
+
+        # Fetch the result
+        result = cursor.fetchone()
+
+        if result:
+            num_rows, total_amount, acceptance_percentage = result
+            return num_rows, total_amount, acceptance_percentage
+        else:
+            return 0, 0, 0  # No matching rows found
+
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+        return None
+
+    finally:
+        # Close the database connection
+        conn.close()
+
+
+def display_feedback(num_rows, total_amount, acceptance_percentage):
+    # Display feedback summary
+    if num_rows > 0:
+        st.subheader("Feedback Summary")
+        # st.write(f"Number of Rows: {num_rows}")
+        # st.write(f"Total Amount: {total_amount}")
+        # st.write(f"Acceptance Percentage: {acceptance_percentage:.2f}%")
+
+        # # Three KPIs with different values and colors
+        # kpi1_value = 100
+        # kpi2_value = 75
+        # kpi3_value = 90
+
+        # # Define custom CSS styles for each KPI
+        # kpi1_style = (
+        #     "color: #F5BBF4; font-size: 18px; padding: 10px; text-aligne: center;"
+        # )
+        # kpi2_style = (
+        #     "color: #F5BBD7; font-size: 18px; padding: 10px; text-aligne: center;"
+        # )
+        # kpi3_style = (
+        #     "color: #D9BBF5; font-size: 18px; padding: 10px; text-aligne: center;"
+        # )
+
+        # # Create a layout using HTML and CSS to display the KPIs on the same row
+        # kpi_layout = f"""
+        #     <div style="display: flex; justify-content: space-between;">
+        #         <div style="{kpi1_style}">Number of investments: {num_rows}</div>
+        #         <div style="{kpi2_style}">Amount invested: {total_amount}</div>
+        #         <div style="{kpi3_style}">Acceptation percentage: {acceptance_percentage:.2f}</div>
+        #     </div>
+        # """
+
+        # # Display the KPI layout using st.markdown
+        # st.markdown(kpi_layout, unsafe_allow_html=True)
+
+        # Create a layout for the table with centered text in each cell
+        kpi_table_layout = """
+            <style>
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                th, td {{
+                    text-align: center;
+                    padding: 10px;
+                }}
+            </style>
+            <table>
+                <tr>
+                    <th>Number of investments</th>
+                    <th>Amount invested</th>
+                    <th>Acceptation percentage</th>
+                </tr>
+                <tr>
+                    <td>{}</td>
+                    <td>{:.1f}</td>
+                    <td>{:.2f}</td>
+                </tr>
+            </table>
+        """.format(
+            int(num_rows), total_amount, acceptance_percentage
+        )
+
+        # Display the table layout using st.markdown
+        st.markdown(kpi_table_layout, unsafe_allow_html=True)
+
+    else:
+        st.warning("No feedback data found for the specified run_uuid.")
+
+
 def main_display_model_insights(selected_model_id, selected_model_name):
     set_header_color()
-    st.title(f"Model insights: {selected_model_name}")
+    st.write(
+        f"<h1 style='text-align: center;'>Model insights: {selected_model_name}</h1>",
+        unsafe_allow_html=True,
+    )
 
     # Horizontal separator
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -188,6 +292,14 @@ def main_display_model_insights(selected_model_id, selected_model_name):
 
     # Horizontal separator
     st.markdown("<hr>", unsafe_allow_html=True)
+
+    display_progress_bar("Training accuracy metric", 0.56)
+
+    # Horizontal separator
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    num_rows, total_amount, acceptance_percentage = get_feedback(selected_model_id)
+    display_feedback(num_rows, total_amount, acceptance_percentage)
 
 
 # Run the page function
@@ -200,5 +312,3 @@ if __name__ == "__main__":
     selected_model_id, selected_model_name = get_and_display_sidebar()
 
     main_display_model_insights(selected_model_id, selected_model_name)
-
-    display_progress_bar("Training accuracy metric", 0.56)
