@@ -6,13 +6,21 @@ import pandas as pd
 def set_header_color():
     st.markdown(
         """
-        <style>
-        h1, h2, h3, h4, h5, h6 {
-            color: #5F259F; /* Violet Pantone color */
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
+    <style>
+    h1 {
+        color: #F5BBF4;
+    }
+    h2 {
+        color: #F5BBF4;
+    }
+    h3 {
+        color: #B981EC;
+    }
+    h4 {
+        color: #B981EC;
+    }
+    </style>
+    """, unsafe_allow_html=True,
     )
 
 
@@ -50,23 +58,22 @@ def main():
         "Enter the name of a company and get the most recommended bonds for this client"
     )
 
+    company_short_name = st.text_input("Enter Company Short Name")
+    run_button = st.button("Run Recommender", key="company_to_isin_recommender")
+
     # Layout: Two columns
     col1, col2 = st.columns(2)
 
     # Column 1: Company Search and Statistics
     with col1:
-        company_short_name = st.text_input("Enter Company Short Name")
-        run_button = st.button("Run Recommender", key="company_to_isin_recommender")
-
         if run_button and company_short_name:
-            st.write("Company Statistics:")
             company_stats = get_company_statistics(company_short_name)
             if company_stats is not None:
                 donnees = []
                 for item in company_stats:
                     donnees += [item]
-                df = pd.DataFrame(donnees, columns=["ISIN", "Rating", "Montant"])
-                st.write("3 most recent client transactions:")
+                df = pd.DataFrame(donnees, columns=['ISIN', 'Rating', 'Montant($)'])
+                st.subheader("3 most recent client transactions:")
                 st.table(df)
             else:
                 st.write("Not available")
@@ -74,7 +81,7 @@ def main():
     # Column 2: Bond Recommendations and Statistics
     with col2:
         if run_button and company_short_name:
-            st.write("Recommended Bonds for:", company_short_name)
+            st.subheader(f"Recommended Bonds for: {company_short_name}")
             recommended_bonds = get_bond_recommendations(company_short_name)
 
             for bond, reason in recommended_bonds:
