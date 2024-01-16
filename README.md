@@ -46,6 +46,14 @@ investors with the highest probability of appetite for our axes. The tool would 
   pip install -r requirements.txt
   ```
 
+5. **Create a database from natixis "RFQ_Data_Challenge_HEC" .csv file**:
+ 
+ After placing "RFQ_Data_Challenge_HEC.csv" in your local repository, run :
+  ```pyhton
+  python src\\stats_db_creation.py
+  ```
+Now you're all set !
+
 # Usage
  To run on data :
  ```pyhton
