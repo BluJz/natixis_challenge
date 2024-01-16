@@ -2,6 +2,7 @@ import streamlit as st
 from sql_querier import sql_querier
 import pandas as pd
 
+
 def set_header_color():
     st.markdown(
         """
@@ -19,7 +20,8 @@ def set_header_color():
         color: #B981EC;
     }
     </style>
-    """, unsafe_allow_html=True,
+    """,
+        unsafe_allow_html=True,
     )
 
 
@@ -71,15 +73,16 @@ def main():
                 donnees = []
                 for item in company_stats:
                     donnees += [item]
-                df = pd.DataFrame(donnees, columns=['ISIN', 'Rating', 'Montant($)'])
+                df = pd.DataFrame(donnees, columns=["ISIN", "Rating", "Montant($)"])
                 st.subheader("3 most recent client transactions:")
                 st.table(df)
-            else :
+            else:
                 st.write("Not available")
 
     # Column 2: Bond Recommendations and Statistics
     with col2:
         if run_button and company_short_name:
+            request_feedback("", "", "")
             st.subheader(f"Recommended Bonds for: {company_short_name}")
             recommended_bonds = get_bond_recommendations(company_short_name)
 
@@ -91,6 +94,23 @@ def main():
                 for key, value in bond_stats.items():
                     st.write(f"{key}: {value}")
                 st.write("---")
+
+
+def request_feedback(request, result, model_id):
+    """From a combination of request / result, displays a prefilled button to add feedback of the model specific model.
+
+    Args:
+        request (String): ISIN code
+        result (List): Results given
+        model_id (String): Identifier of the model for the feedback table
+    """
+    accept_button = st.button("Accept recommandation", key="accept_isin_feedback")
+    deny_button = st.button("Deny recommandation", key="deny_isin_feedback")
+
+    if accept_button:
+        st.succes("Feedback added - Accepted recommandation !")
+    elif deny_button:
+        st.succes("Feedback added - Denied recommandation !")
 
 
 # Run the page function
