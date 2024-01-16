@@ -52,6 +52,47 @@ def get_bond_statistics(bond_name):
     return {"Yield": "5%", "Rating": "AAA"}
 
 
+def bond_form():
+    # Create a dictionary to store bond information
+    bond_info = {
+        "ISIN": "",
+        "Coupon": 0.5,
+        "BloomIndustrySubGroup": "",
+        "Classification": "",
+        "Country": "",
+        "Ccy": "",
+        "Rating_SP": "",
+        "Deal_Date": "",
+        "Maturity": "",
+        "Type": "Fixed",
+    }
+
+    st.write("Enter New Bond Information:")
+
+    # Create input fields for bond information
+    bond_info["ISIN"] = st.text_input("ISIN", bond_info["ISIN"])
+    bond_info["Coupon"] = st.number_input("Coupon", bond_info["Coupon"])
+    bond_info["BloomIndustrySubGroup"] = st.text_input(
+        "Bloom Industry SubGroup", bond_info["BloomIndustrySubGroup"]
+    )
+    bond_info["Classification"] = st.text_input(
+        "Classification", bond_info["Classification"]
+    )
+    bond_info["Country"] = st.text_input("Country", bond_info["Country"])
+    bond_info["Ccy"] = st.text_input("Currency", bond_info["Ccy"])
+    bond_info["Rating_SP"] = st.text_input("Rating (S&P)", bond_info["Rating_SP"])
+    bond_info["Deal_Date"] = st.date_input("Deal Date", bond_info["Deal_Date"])
+    bond_info["Maturity"] = st.date_input("Maturity Date", bond_info["Maturity"])
+    bond_info["Type"] = st.selectbox(
+        "Bond Type", ["Fixed", "Floating", "Convertible", "Other"], bond_info["Type"]
+    )
+
+    # Save the bond information when the "Submit" button is clicked
+    if st.button("Submit"):
+        st.write("Bond Information Submitted:")
+        st.write(bond_info)
+
+
 def main():
     set_header_color()
     st.title("Company Bond Recommender")
