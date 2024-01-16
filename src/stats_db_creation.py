@@ -13,7 +13,7 @@ db_file_path = 'src/stats/stats.db'  # Replace with your desired .db file path
 conn = sqlite3.connect(db_file_path)
 
 # Step 3: Write DataFrame to SQLite database
-df.to_sql('table_name', conn, if_exists='replace', index=False)  # Replace 'table_name' with your desired table name
+df.to_sql('ma_table', conn, if_exists='replace', index=False)  # Replace 'table_name' with your desired table name
 
 # Close the connection
 conn.close()
