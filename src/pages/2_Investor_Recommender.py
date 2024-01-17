@@ -54,7 +54,7 @@ def get_company_statistics(company_name):
     return {"Revenue": "200M", "Employees": "1000"}
 
 
-def bond_form():
+def isin_features_form():
     # Create a dictionary to store bond information
     bond_info = {
         "ISIN": "",
@@ -72,7 +72,8 @@ def bond_form():
     st.write("Enter New Bond Information:")
 
     # Create input fields for bond information
-    bond_info["ISIN"] = st.text_input("ISIN", bond_info["ISIN"])
+    # bond_info["ISIN"] = st.text_input("ISIN", bond_info["ISIN"])
+    bond_info["ISIN"] = "NEW"
     bond_info["Coupon"] = st.number_input("Coupon", bond_info["Coupon"])
     bond_info["BloomIndustrySubGroup"] = st.text_input(
         "Bloom Industry SubGroup", bond_info["BloomIndustrySubGroup"]
@@ -90,52 +91,110 @@ def bond_form():
     )
 
     # Save the bond information when the "Submit" button is clicked
-    if st.button("Submit"):
-        st.write("Bond Information Submitted:")
-        st.write(bond_info)
+    submit_button = st.button("Submit", key="submit")
+    if submit_button:
+        st.success("Bond Information Submitted:")
+        return bond_info
+
+
+def isin_code_form():
+    isin_code = st.text_input("Enter ISIN Code")
+    # Save the bond information when the "Submit" button is clicked
+
+    # if submit_button:
+    #     return isin_code, True
+    return isin_code
 
 
 def main():
     set_header_color()
     st.title("ISIN-Based Company Recommender")
-    st.write("Enter an ISIN code and get recommended companies")
-
-    isin_code = st.text_input("Enter ISIN Code")
-    run_button = st.button("Run Recommender", key="isin_to_company_recommender")
+    st.write(
+        "Enter an ISIN code or fill an ISIN features form and get recommended companies"
+    )
 
     # Layout: Two columns
     col1, col2 = st.columns(2)
 
-    # Column 1: ISIN Input and Statistics
+    # run_button = st.button("Run Recommender", key="isin_to_company_recommender")
     with col1:
-        if run_button and isin_code:
-            st.subheader("ISIN Code Statistics:")
-            isin_stats = get_isin_statistics(isin_code)
-            if isin_stats is not None:
-                donnees = []
-                for item in isin_stats:
-                    donnees += [item]
-                df = pd.DataFrame(
-                    donnees, columns=["Total Traded Volume", "Mid Price($)", "Rating"]
-                )
-                st.table(df)
-            else:
-                st.write("Not available")
-
-    # Column 2: Company Recommendations and Statistics
+        submit_new_isin_code_button = st.button(
+            "Submit new ISIN code (only)", key="submit_new_isin_code"
+        )
     with col2:
-        if run_button and isin_code:
-            st.subheader("Recommended Companies for ISIN:", isin_code)
-            recommended_companies = get_company_recommendations(isin_code)
+        submit_new_isin_features_button = st.button(
+            "Submit new ISIN features", key="submit_new_isin_features"
+        )
 
-            for company, reason in recommended_companies:
-                st.write(f"Company: {company}")
-                st.write(f"Reason: {reason}")
-                company_stats = get_company_statistics(company)
-                st.write("Company Statistics:")
-                for key, value in company_stats.items():
-                    st.write(f"{key}: {value}")
-                st.write("---")
+    # submit_isin_code_button = None
+    # submit_isin_features_button = None
+    # if submit_new_isin_features_button:
+    #     isin_features = isin_features_form()
+    #     submit_isin_features_button = st.button("Submit", key="submit_isin_features")
+    # elif submit_new_isin_code_button:
+    #     isin_code = isin_code_form()
+    #     submit_isin_code_button = st.button("Submit", key="submit_isin_code")
+
+    # if submit_isin_code_button:
+    #     st.success("ISIN code submitted.")
+    # elif submit_isin_features_button:
+    #     st.success("ISIN features submitted.")
+
+    # Initialize session state to manage form state
+    if "show_code_form" not in st.session_state:
+        st.session_state.show_code_form = False
+
+    # Create the Streamlit app
+    st.title("ISIN Code Submission")
+
+    # Check if the "Enter new code" button is clicked
+    if st.button("Enter new code"):
+        st.session_state.show_code_form = True
+
+    # Display the ISIN code input form if the flag is True
+    if st.session_state.show_code_form:
+        st.subheader("Enter ISIN code:")
+        isin_code = st.text_input("ISIN Code:")
+        submit_button = st.button("Submit")
+
+        # Check if the "Submit" button is clicked
+        if submit_button:
+            # Process the ISIN code (e.g., validation or further actions)
+            # Display a success message
+            st.success("ISIN code submitted.")
+            # Hide the form by setting the session state flag to False
+            st.session_state.show_code_form = False
+
+    # # Column 1: ISIN Input and Statistics
+    # with col1:
+    #     if run_button and isin_code:
+    #         st.subheader("ISIN Code Statistics:")
+    #         isin_stats = get_isin_statistics(isin_code)
+    #         if isin_stats is not None:
+    #             donnees = []
+    #             for item in isin_stats:
+    #                 donnees += [item]
+    #             df = pd.DataFrame(
+    #                 donnees, columns=["Total Traded Volume", "Mid Price($)", "Rating"]
+    #             )
+    #             st.table(df)
+    #         else:
+    #             st.write("Not available")
+
+    # # Column 2: Company Recommendations and Statistics
+    # with col2:
+    #     if run_button and isin_code:
+    #         st.subheader("Recommended Companies for ISIN:", isin_code)
+    #         recommended_companies = get_company_recommendations(isin_code)
+
+    #         for company, reason in recommended_companies:
+    #             st.write(f"Company: {company}")
+    #             st.write(f"Reason: {reason}")
+    #             company_stats = get_company_statistics(company)
+    #             st.write("Company Statistics:")
+    #             for key, value in company_stats.items():
+    #                 st.write(f"{key}: {value}")
+    #             st.write("---")
 
 
 # Run the page function
