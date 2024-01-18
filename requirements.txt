@@ -9,3 +9,4 @@ pytest
 mlflow
 pytest-black
 pytest-flake8
+faker

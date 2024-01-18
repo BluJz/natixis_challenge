@@ -9,7 +9,7 @@ df = pd.read_csv(csv_file_path, dtype={7: "str", 9: "str"})
 df.rename(columns={"Cusip": "cusip2", "Maturity": "maturity2"}, inplace=True)
 
 # Step 2: Create SQLite database
-db_file_path = "src/stats/stats.db"  # Replace with your desired .db file path
+db_file_path = "src/pages/natixis.db"  # Replace with your desired .db file path
 conn = sqlite3.connect(db_file_path)
 
 # Step 3: Write DataFrame to SQLite database
