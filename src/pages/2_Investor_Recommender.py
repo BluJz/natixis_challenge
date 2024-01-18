@@ -59,8 +59,25 @@ def get_company_recommendations(isin_code):
 
 
 def get_company_statistics(company_name):
-    # Replace with actual logic to fetch company statistics
-    return {"Revenue": "200M", "Employees": "1000"}
+    query = f"""
+    SELECT 
+        '{company_name}' AS company_name,
+        SUM(Total_Traded_Volume * B_price) AS Total_Traded_Volume,
+        (
+            SELECT BloomIndustrySector 
+            FROM ma_table 
+            WHERE company_short_name = "{company_name}"
+            GROUP BY BloomIndustrySector 
+            ORDER BY COUNT(*) DESC 
+            LIMIT 1
+        ) AS Favorite_investment_sector
+    FROM 
+        ma_table 
+    WHERE 
+        company_short_name = "{company_name}"
+    LIMIT 3;
+    """
+    return sql_querier(query)
 
 
 def isin_features_form():
@@ -253,13 +270,18 @@ def main():
         with col2:
             st.subheader("Recommended Companies for ISIN:", isin_code)
             if client_recent_new_bond is not None:
+                donnees = []
                 for company in client_recent_new_bond:
-                    st.write(f"Company: {company}")
-                    # company_stats = get_company_statistics(company)  # TODO
-                    # st.write("Company Statistics:")
-                    # for key, value in company_stats.items():
-                    #     st.write(f"{key}: {value}")
-                    # st.write("---")
+                    if company is not None:
+                        company_stats = get_company_statistics(company)
+                        if isin_stats is not None:
+                            for item in company_stats:
+                                donnees += [item]
+                df_company_stats = pd.DataFrame(
+                donnees, columns=["Company", "Total Traded Volume", "Favorite Investment Sector"]
+                )
+                st.table(df_company_stats)
+
 
         reset_button = st.button("Reset", key="reset_button")
         if reset_button:
