@@ -178,11 +178,14 @@ def set_result_mode_from_isin_features(isin_features):
     st.session_state.result_mode_bond_isin_code = False
     st.session_state.result_mode_bond_isin_features = True
 
+
 def refresh_recommendations_isin_code():
     st.session_state.refresh_count_isin_code += 1
 
+
 def refresh_recommendations_isin_features():
     st.session_state.refresh_count_isin_features += 1
+
 
 def main():
     set_header_color()
@@ -276,7 +279,11 @@ def main():
                 if "refresh_count_isin_code" not in st.session_state:
                     st.session_state.refresh_count_isin_code = 0
 
-                (client_hist_new_bond, client_recent_new_bond, bonds_new_bond) = recommender_isin_code(
+                (
+                    client_hist_new_bond,
+                    client_recent_new_bond,
+                    bonds_new_bond,
+                ) = recommender_isin_code(
                     isin_code=st.session_state.isin_code,
                     isin_to_features_dict=isin_to_features_dict,
                     client_apetite_dict_hist=client_apetite_dict_hist,
@@ -348,7 +355,7 @@ def main():
                     on_click=set_investor_recommender_initial_mode,
                     key="reset_button",
                 )
-                
+
                 # For ISIN codes Recommendations
                 refresh_button_isin_code = st.button(
                     "Refresh ISIN Code Recommendations",
@@ -362,7 +369,11 @@ def main():
                 if "refresh_count_isin_features" not in st.session_state:
                     st.session_state.refresh_count_isin_features = 0
 
-                (client_hist_new_bond, client_recent_new_bond, bonds_new_bond) = recommender_isin_features(
+                (
+                    client_hist_new_bond,
+                    client_recent_new_bond,
+                    bonds_new_bond,
+                ) = recommender_isin_features(
                     isin_features=st.session_state.isin_features,
                     scaler=scaler,
                     one_hot_encoder=one_hot_encoder,
