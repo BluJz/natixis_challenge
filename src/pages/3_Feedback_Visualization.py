@@ -50,32 +50,32 @@ def main():
     engine = create_engine(feedback_db_uri)
 
     set_header_color()
-    st.title("Model used for recommenders and clustering")
+    # st.title("Model used for recommenders and clustering")
 
-    # Streamlit interface to collect user feedback
-    model_name = st.text_input("Model used")
-    bond_issuer_name = st.text_input("Client name")
-    amount = st.number_input("Amount")
-    acceptation_status = st.checkbox("Accept (if not checked: Declined)")
+    # # Streamlit interface to collect user feedback
+    # model_name = st.text_input("Model used")
+    # bond_issuer_name = st.text_input("Client name")
+    # amount = st.number_input("Amount")
+    # acceptation_status = st.checkbox("Accept (if not checked: Declined)")
 
-    feedback_button = st.button("Submit Feedback", key="feedback")
-    if feedback_button:
-        Session = sessionmaker(bind=engine)
+    # feedback_button = st.button("Submit Feedback", key="feedback")
+    # if feedback_button:
+    #     Session = sessionmaker(bind=engine)
 
-        with Session() as session:
-            # Assuming you have collected the relevant feedback information
-            feedback_entry = Feedback(
-                model_name=model_name,
-                bond_issuer_name=bond_issuer_name,
-                amount=amount,
-                acceptation_status=acceptation_status,
-            )
+    #     with Session() as session:
+    #         # Assuming you have collected the relevant feedback information
+    #         feedback_entry = Feedback(
+    #             model_name=model_name,
+    #             bond_issuer_name=bond_issuer_name,
+    #             amount=amount,
+    #             acceptation_status=acceptation_status,
+    #         )
 
-            # Add the feedback to the database
-            session.add(feedback_entry)
-            # Commit the transaction to save the new feedback entry to the database
-            session.commit()
-        st.success("Feedback submitted successfully")
+    #         # Add the feedback to the database
+    #         session.add(feedback_entry)
+    #         # Commit the transaction to save the new feedback entry to the database
+    #         session.commit()
+    #     st.success("Feedback submitted successfully")
 
     update_viz_feedback_button = st.button(
         "Visualize updated database: ", key="updateviz_feedback"
