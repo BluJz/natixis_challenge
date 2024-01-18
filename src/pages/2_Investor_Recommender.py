@@ -374,11 +374,11 @@ def main():
                 st.table(df_company_stats)
 
 
-                reset_button = st.button(
-                    "Reset",
-                    on_click=set_investor_recommender_initial_mode,
-                    key="reset_button",
-                )
+            reset_button = st.button(
+                "Reset",
+                on_click=set_investor_recommender_initial_mode,
+                key="reset_button",
+            )
 
 
 def add_isin_code_feedback(isin_code, model_hash, recommandations):
