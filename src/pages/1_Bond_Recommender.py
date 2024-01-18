@@ -1,6 +1,10 @@
 import streamlit as st
 from sql_querier import sql_querier
 import pandas as pd
+from sqlalchemy import create_engine
+from models_feedback_sql import Feedback
+from model_pipeline import global_run, recommender_client
+from sqlalchemy.orm import sessionmaker
 
 
 def set_header_color():
@@ -38,15 +42,6 @@ def get_company_statistics(company_short_name):
     return sql_querier(query)
 
 
-def get_bond_recommendations(company_short_name):
-    # Replace with actual logic to get bond recommendations
-    return [
-        ("Bond A", "High yield"),
-        ("Bond B", "Stable investment"),
-        ("Bond C", "Low risk"),
-    ]
-
-
 def get_bond_statistics(bond_name):
     # Replace with actual logic to fetch bond statistics
     return {"Yield": "5%", "Rating": "AAA"}
@@ -54,65 +49,144 @@ def get_bond_statistics(bond_name):
 
 def main():
     set_header_color()
+
+    rqf_path = "RFQ_Data_Challenge_HEC.csv"
+    (
+        isin_to_features_dict,
+        client_apetite_dict_hist,
+        client_apetite_dict_recent,
+        features,
+        df_unique,
+        similarity_matrix,
+        scaler,
+        one_hot_encoder,
+        df,
+        model_hash,
+    ) = global_run(file_path=rqf_path)
+
+    company_short_name = None
+
     st.title("Company Bond Recommender")
     st.write(
         "Enter the name of a company and get the most recommended bonds for this client"
     )
 
-    company_short_name = st.text_input("Enter Company Short Name")
-    run_button = st.button("Run Recommender", key="company_to_isin_recommender")
+    if "show_client_form" not in st.session_state:
+        st.session_state.show_client_form = True
+    if "result_mode_client" not in st.session_state:
+        st.session_state.result_mode_client = False
 
-    # Layout: Two columns
-    col1, col2 = st.columns(2)
+    if st.session_state.show_client_form:
+        company_short_name = st.text_input("Enter Company Short Name")
+        run_button = st.button("Run Recommender", key="company_to_isin_recommender")
+        if run_button:
+            st.success("Company name submitted")
+            st.session_state.result_mode_client = True
+            st.session_state.show_client_form = False
 
-    # Column 1: Company Search and Statistics
-    with col1:
-        if run_button and company_short_name:
-            company_stats = get_company_statistics(company_short_name)
+    if st.session_state.result_mode_client:
+        # Layout: Two columns
+        col1, col2 = st.columns(2)
+
+        company_stats = get_company_statistics(company_short_name)
+        client_hist_apetite, top_n_bonds = recommender_client(
+            client_name=company_short_name,
+            df=df,
+            isin_to_features_dict=isin_to_features_dict,
+            features=features,
+            df_unique=df_unique,
+            n=3,
+        )
+
+        # Column 1: Company Search and Statistics
+        with col1:
             if company_stats is not None:
                 donnees = []
                 for item in company_stats:
                     donnees += [item]
-                df = pd.DataFrame(donnees, columns=["ISIN", "Rating", "Montant($)"])
+                df_bond_stats = pd.DataFrame(
+                    donnees, columns=["ISIN", "Rating", "Montant($)"]
+                )
                 st.subheader("3 most recent client transactions:")
-                st.table(df)
+                st.table(df_bond_stats)
             else:
                 st.write("Not available")
 
-    # Column 2: Bond Recommendations and Statistics
-    with col2:
-        if run_button and company_short_name:
-            request_feedback("", "", "")
+            feedback_recommandations = list(top_n_bonds.ISIN)
+            add_client_feedback(
+                client_name=company_short_name,
+                model_hash=model_hash,
+                recommandations=feedback_recommandations,
+            )
+
+        # Column 2: Bond Recommendations and Statistics
+        with col2:
             st.subheader(f"Recommended Bonds for: {company_short_name}")
-            recommended_bonds = get_bond_recommendations(company_short_name)
+            st.dataframe(top_n_bonds)
 
-            for bond, reason in recommended_bonds:
-                st.write(f"Bond: {bond}")
-                st.write(f"Reason: {reason}")
-                bond_stats = get_bond_statistics(bond)
-                st.write("Bond Statistics:")
-                for key, value in bond_stats.items():
-                    st.write(f"{key}: {value}")
-                st.write("---")
+        reset_button = st.button("Reset", key="reset_button")
+        if reset_button:
+            st.session_state.result_mode_client = False
+            st.session_state.show_client_form = True
 
 
-def request_feedback(request, result, model_id):
-    """From a combination of request / result, displays a prefilled button to add feedback of the model specific model.
+def add_client_feedback(client_name, model_hash, recommandations):
+    feedback_db_uri = "sqlite:///src/models/feedback.db"
+    engine = create_engine(feedback_db_uri)
 
-    Args:
-        request (String): ISIN code
-        result (List): Results given
-        model_id (String): Identifier of the model for the feedback table
-    """
+    if type(recommandations) is list:
+        formatted_recommandation = [
+            f"{i + 1} - {item}" for i, item in enumerate(recommandations)
+        ]
+        formatted_recommandation = "; ".join(formatted_recommandation)
+    else:
+        formatted_recommandation = recommandations
+
     accept_button = st.button("Accept recommandation", key="accept_isin_feedback")
     deny_button = st.button("Deny recommandation", key="deny_isin_feedback")
 
+    st.write(client_name)
+
     if accept_button:
-        st.succes("Feedback added - Accepted recommandation !")
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Assuming you have collected the relevant feedback information
+            feedback_entry = Feedback(
+                model_hash=model_hash,
+                isin_code=formatted_recommandation,
+                isin_features=None,
+                company_name=client_name,
+                recommender_type="Client to bond",
+                acceptation_status="Accepted",
+            )
+
+            # Add the feedback to the database
+            session.add(feedback_entry)
+            # Commit the transaction to save the new feedback entry to the database
+            session.commit()
+
+        st.success("Feedback added - Accepted recommandation !")
     elif deny_button:
-        st.succes("Feedback added - Denied recommandation !")
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Assuming you have collected the relevant feedback information
+            feedback_entry = Feedback(
+                model_hash=model_hash,
+                isin_code=formatted_recommandation,
+                isin_features=None,
+                company_name=client_name,
+                recommender_type="Client to bond",
+                acceptation_status="Denied",
+            )
+
+            # Add the feedback to the database
+            session.add(feedback_entry)
+            # Commit the transaction to save the new feedback entry to the database
+            session.commit()
+        st.success("Feedback added - Denied recommandation !")
 
 
 # Run the page function
 if __name__ == "__main__":
+    # Problems: have to click twice on the reset button
     main()

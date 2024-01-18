@@ -1,6 +1,15 @@
 import streamlit as st
 from sql_querier import sql_querier
 import pandas as pd
+from datetime import date
+from model_pipeline import (
+    global_run,
+    recommender_isin_code,
+    recommender_isin_features,
+)
+from sqlalchemy import create_engine
+from models_feedback_sql import Feedback
+from sqlalchemy.orm import sessionmaker
 
 
 def set_header_color():
@@ -57,23 +66,22 @@ def get_company_statistics(company_name):
 def isin_features_form():
     # Create a dictionary to store bond information
     bond_info = {
-        "ISIN": "",
+        "ISIN": "NEW",
         "Coupon": 0.5,
         "BloomIndustrySubGroup": "",
         "Classification": "",
         "Country": "",
         "Ccy": "",
         "Rating_SP": "",
-        "Deal_Date": "",
-        "Maturity": "",
+        "Deal_Date": date.today(),
+        "Maturity": date.today(),
         "Type": "Fixed",
     }
 
     st.write("Enter New Bond Information:")
 
     # Create input fields for bond information
-    # bond_info["ISIN"] = st.text_input("ISIN", bond_info["ISIN"])
-    bond_info["ISIN"] = "NEW"
+    bond_info["ISIN"] = st.text_input("ISIN", bond_info["ISIN"])
     bond_info["Coupon"] = st.number_input("Coupon", bond_info["Coupon"])
     bond_info["BloomIndustrySubGroup"] = st.text_input(
         "Bloom Industry SubGroup", bond_info["BloomIndustrySubGroup"]
@@ -86,28 +94,47 @@ def isin_features_form():
     bond_info["Rating_SP"] = st.text_input("Rating (S&P)", bond_info["Rating_SP"])
     bond_info["Deal_Date"] = st.date_input("Deal Date", bond_info["Deal_Date"])
     bond_info["Maturity"] = st.date_input("Maturity Date", bond_info["Maturity"])
-    bond_info["Type"] = st.selectbox(
-        "Bond Type", ["Fixed", "Floating", "Convertible", "Other"], bond_info["Type"]
-    )
 
-    # Save the bond information when the "Submit" button is clicked
-    submit_button = st.button("Submit", key="submit")
-    if submit_button:
-        st.success("Bond Information Submitted:")
-        return bond_info
+    bond_types = ["Fixed", "Floating", "Convertible", "Other"]
+    bond_info["Type"] = st.selectbox("Bond Type", bond_types)
+    return bond_info
 
 
 def isin_code_form():
     isin_code = st.text_input("Enter ISIN Code")
-    # Save the bond information when the "Submit" button is clicked
-
-    # if submit_button:
-    #     return isin_code, True
     return isin_code
 
 
 def main():
     set_header_color()
+
+    rqf_path = "RFQ_Data_Challenge_HEC.csv"
+    (
+        isin_to_features_dict,
+        client_apetite_dict_hist,
+        client_apetite_dict_recent,
+        features,
+        df_unique,
+        similarity_matrix,
+        scaler,
+        one_hot_encoder,
+        df,
+        model_hash,
+    ) = global_run(file_path=rqf_path)
+
+    isin_code = None
+    isin_features = None
+    client_hist_new_bond = None
+    client_recent_new_bond = None
+    bonds_new_bond = None
+
+    if "show_isin_code_form" not in st.session_state:
+        st.session_state.show_isin_code_form = False
+    if "show_isin_features_form" not in st.session_state:
+        st.session_state.show_isin_features_form = False
+    if "result_mode" not in st.session_state:
+        st.session_state.result_mode = False
+
     st.title("ISIN-Based Company Recommender")
     st.write(
         "Enter an ISIN code or fill an ISIN features form and get recommended companies"
@@ -116,7 +143,6 @@ def main():
     # Layout: Two columns
     col1, col2 = st.columns(2)
 
-    # run_button = st.button("Run Recommender", key="isin_to_company_recommender")
     with col1:
         submit_new_isin_code_button = st.button(
             "Submit new ISIN code (only)", key="submit_new_isin_code"
@@ -126,77 +152,252 @@ def main():
             "Submit new ISIN features", key="submit_new_isin_features"
         )
 
-    # submit_isin_code_button = None
-    # submit_isin_features_button = None
-    # if submit_new_isin_features_button:
-    #     isin_features = isin_features_form()
-    #     submit_isin_features_button = st.button("Submit", key="submit_isin_features")
-    # elif submit_new_isin_code_button:
-    #     isin_code = isin_code_form()
-    #     submit_isin_code_button = st.button("Submit", key="submit_isin_code")
+    if submit_new_isin_features_button:
+        if not st.session_state.result_mode:
+            st.session_state.show_isin_features_form = True
+            st.session_state.show_isin_code_form = False
+    elif submit_new_isin_code_button:
+        if not st.session_state.result_mode:
+            st.session_state.show_isin_code_form = True
+            st.session_state.show_isin_features_form = False
 
-    # if submit_isin_code_button:
-    #     st.success("ISIN code submitted.")
-    # elif submit_isin_features_button:
-    #     st.success("ISIN features submitted.")
+    if not st.session_state.result_mode:
+        if st.session_state.show_isin_features_form:
+            st.subheader("Enter ISIN new bond features: ")
+            isin_features = isin_features_form()
+            submit_isin_features_button = st.button(
+                "Submit", key="submit_isin_features"
+            )
 
-    # Initialize session state to manage form state
-    if "show_code_form" not in st.session_state:
-        st.session_state.show_code_form = False
+            if submit_isin_features_button:
+                st.success("ISIN features submitted")
 
-    # Create the Streamlit app
-    st.title("ISIN Code Submission")
+                (
+                    client_hist_new_bond,
+                    client_recent_new_bond,
+                    bonds_new_bond,
+                ) = recommender_isin_features(
+                    isin_features=isin_features,
+                    scaler=scaler,
+                    one_hot_encoder=one_hot_encoder,
+                    client_apetite_dict_hist=client_apetite_dict_hist,
+                    client_apetite_dict_recent=client_apetite_dict_recent,
+                    features=features,
+                    df_unique=df_unique,
+                    n=3,
+                )
 
-    # Check if the "Enter new code" button is clicked
-    if st.button("Enter new code"):
-        st.session_state.show_code_form = True
+                st.session_state.show_isin_features_form = False
+                st.session_state.result_mode = True
 
-    # Display the ISIN code input form if the flag is True
-    if st.session_state.show_code_form:
-        st.subheader("Enter ISIN code:")
-        isin_code = st.text_input("ISIN Code:")
-        submit_button = st.button("Submit")
+        if st.session_state.show_isin_code_form:
+            st.subheader("Enter ISIN code: ")
+            isin_code = isin_code_form()
+            submit_isin_code_button = st.button("Submit", key="submit_isin_code")
 
-        # Check if the "Submit" button is clicked
-        if submit_button:
-            # Process the ISIN code (e.g., validation or further actions)
-            # Display a success message
-            st.success("ISIN code submitted.")
-            # Hide the form by setting the session state flag to False
-            st.session_state.show_code_form = False
+            if submit_isin_code_button:
+                st.success("ISIN code submitted")
 
-    # # Column 1: ISIN Input and Statistics
-    # with col1:
-    #     if run_button and isin_code:
-    #         st.subheader("ISIN Code Statistics:")
-    #         isin_stats = get_isin_statistics(isin_code)
-    #         if isin_stats is not None:
-    #             donnees = []
-    #             for item in isin_stats:
-    #                 donnees += [item]
-    #             df = pd.DataFrame(
-    #                 donnees, columns=["Total Traded Volume", "Mid Price($)", "Rating"]
-    #             )
-    #             st.table(df)
-    #         else:
-    #             st.write("Not available")
+                (
+                    client_hist_new_bond,
+                    client_recent_new_bond,
+                    bonds_new_bond,
+                ) = recommender_isin_code(
+                    isin_code=isin_code,
+                    isin_to_features_dict=isin_to_features_dict,
+                    client_apetite_dict_hist=client_apetite_dict_hist,
+                    client_apetite_dict_recent=client_apetite_dict_recent,
+                    features=features,
+                    df_unique=df_unique,
+                    n=3,
+                )
 
-    # # Column 2: Company Recommendations and Statistics
-    # with col2:
-    #     if run_button and isin_code:
-    #         st.subheader("Recommended Companies for ISIN:", isin_code)
-    #         recommended_companies = get_company_recommendations(isin_code)
+                st.session_state.show_isin_code_form = False
+                st.session_state.result_mode = True
 
-    #         for company, reason in recommended_companies:
-    #             st.write(f"Company: {company}")
-    #             st.write(f"Reason: {reason}")
-    #             company_stats = get_company_statistics(company)
-    #             st.write("Company Statistics:")
-    #             for key, value in company_stats.items():
-    #                 st.write(f"{key}: {value}")
-    #             st.write("---")
+    if st.session_state.result_mode:
+        st.session_state.show_isin_code_form = False
+        st.session_state.show_isin_features_form = False
+        # Column 1: ISIN Input and Statistics
+        with col1:
+            st.subheader("ISIN Code Statistics: ")
+            isin_stats = get_isin_statistics(isin_code)
+            if isin_stats is not None:
+                donnees = []
+                for item in isin_stats:
+                    donnees += [item]
+                df_isin_stats = pd.DataFrame(
+                    donnees, columns=["Total Traded Volume", "Mid Price($)", "Rating"]
+                )
+                st.table(df_isin_stats)
+            else:
+                st.write("Not available")
+
+            st.subheader("Most similar bonds: ")
+            st.dataframe(bonds_new_bond)
+
+            if isin_code is not None:
+                add_isin_code_feedback(
+                    isin_code=isin_code,
+                    model_hash=model_hash,
+                    recommandations=client_recent_new_bond,
+                )
+            elif isin_features is not None:
+                add_isin_features_feedback(
+                    isin_features=isin_features,
+                    model_hash=model_hash,
+                    recommandations=client_recent_new_bond,
+                )
+
+        # Column 2: Company Recommendations and Statistics
+        with col2:
+            st.subheader("Recommended Companies for ISIN:", isin_code)
+            if client_recent_new_bond is not None:
+                for company in client_recent_new_bond:
+                    st.write(f"Company: {company}")
+                    # company_stats = get_company_statistics(company)  # TODO
+                    # st.write("Company Statistics:")
+                    # for key, value in company_stats.items():
+                    #     st.write(f"{key}: {value}")
+                    # st.write("---")
+
+        reset_button = st.button("Reset", key="reset_button")
+        if reset_button:
+            st.session_state.result_mode = False
+
+
+def add_isin_code_feedback(isin_code, model_hash, recommandations):
+    """From a combination of request / result, displays a prefilled button to add feedback of the model specific model.
+
+    Args:
+        request (String): ISIN code
+        result (List): Results given
+        model_id (String): Identifier of the model for the feedback table
+    """
+    feedback_db_uri = "sqlite:///src/models/feedback.db"
+    engine = create_engine(feedback_db_uri)
+
+    if type(recommandations) is list:
+        formatted_recommandation = [
+            f"{i + 1} - {item}" for i, item in enumerate(recommandations)
+        ]
+        formatted_recommandation = "; ".join(formatted_recommandation)
+    else:
+        formatted_recommandation = recommandations
+
+    accept_button = st.button("Accept recommandation", key="accept_isin_feedback")
+    deny_button = st.button("Deny recommandation", key="deny_isin_feedback")
+
+    if accept_button:
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Assuming you have collected the relevant feedback information
+            feedback_entry = Feedback(
+                model_hash=model_hash,
+                isin_code=isin_code,
+                isin_features=None,
+                company_name=formatted_recommandation,
+                recommender_type="ISIN code to client",
+                acceptation_status="Accepted",
+            )
+
+            # Add the feedback to the database
+            session.add(feedback_entry)
+            # Commit the transaction to save the new feedback entry to the database
+            session.commit()
+
+        st.success("Feedback added - Accepted recommandation !")
+    elif deny_button:
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Assuming you have collected the relevant feedback information
+            feedback_entry = Feedback(
+                model_hash=model_hash,
+                isin_code=isin_code,
+                isin_features=None,
+                company_name=formatted_recommandation,
+                recommender_type="ISIN code to client",
+                acceptation_status="Denied",
+            )
+
+            # Add the feedback to the database
+            session.add(feedback_entry)
+            # Commit the transaction to save the new feedback entry to the database
+            session.commit()
+        st.success("Feedback added - Denied recommandation !")
+
+
+def add_isin_features_feedback(isin_features, model_hash, recommandations):
+    """From a combination of request / result, displays a prefilled button to add feedback of the model specific model.
+
+    Args:
+        request (String): ISIN code
+        result (List): Results given
+        model_id (String): Identifier of the model for the feedback table
+    """
+    feedback_db_uri = "sqlite:///src/models/feedback.db"
+    engine = create_engine(feedback_db_uri)
+
+    if type(isin_features) is dict:
+        # Create the formatted string
+        formatted_string = ""
+        for key, value in isin_features.items():
+            formatted_string += f"{key}: {value}; "
+
+        # Remove the trailing space and semicolon
+        formatted_string = formatted_string.strip("; ")
+
+    if type(recommandations) is list:
+        formatted_recommandation = [
+            f"{i + 1} - {item}" for i, item in enumerate(recommandations)
+        ]
+        formatted_recommandation = "; ".join(formatted_recommandation)
+    else:
+        formatted_recommandation = recommandations
+
+    accept_button = st.button("Accept recommandation", key="accept_isin_feedback")
+    deny_button = st.button("Deny recommandation", key="deny_isin_feedback")
+
+    if accept_button:
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Assuming you have collected the relevant feedback information
+            feedback_entry = Feedback(
+                model_hash=model_hash,
+                isin_code=None,
+                isin_features=formatted_string,
+                company_name=formatted_recommandation,
+                recommender_type="ISIN features to client",
+                acceptation_status="Accepted",
+            )
+
+            # Add the feedback to the database
+            session.add(feedback_entry)
+            # Commit the transaction to save the new feedback entry to the database
+            session.commit()
+
+        st.success("Feedback added - Accepted recommandation !")
+    elif deny_button:
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            # Assuming you have collected the relevant feedback information
+            feedback_entry = Feedback(
+                model_hash=model_hash,
+                isin_code=None,
+                isin_features=formatted_string,
+                company_name=formatted_recommandation,
+                recommender_type="ISIN features to client",
+                acceptation_status="Denied",
+            )
+
+            # Add the feedback to the database
+            session.add(feedback_entry)
+            # Commit the transaction to save the new feedback entry to the database
+            session.commit()
+        st.success("Feedback added - Denied recommandation !")
 
 
 # Run the page function
 if __name__ == "__main__":
+    # Problems: the 'Submitted' form is still displayed after submitting the button
     main()

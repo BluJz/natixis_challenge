@@ -40,7 +40,8 @@ def set_header_color():
         color: #B981EC;
     }
     </style>
-    """, unsafe_allow_html=True,
+    """,
+        unsafe_allow_html=True,
     )
 
 
@@ -79,6 +80,7 @@ def main():
     update_viz_feedback_button = st.button(
         "Visualize updated database: ", key="updateviz_feedback"
     )
+
     if update_viz_feedback_button:
         Session = sessionmaker(bind=engine)
         with Session() as session:
@@ -87,13 +89,24 @@ def main():
 
             feedback_df = pd.DataFrame(
                 [
-                    (f.model_name, f.bond_issuer_name, f.amount, f.acceptation_status)
+                    (
+                        f.id,
+                        f.model_hash,
+                        f.isin_code,
+                        f.isin_features,
+                        f.company_name,
+                        f.recommender_type,
+                        f.acceptation_status,
+                    )
                     for f in feedback_data
                 ],
                 columns=[
-                    "Model Name",
-                    "Bond Issuer Name",
-                    "Amount",
+                    "ID",
+                    "Model hash",
+                    "ISIN Code",
+                    "ISIN features",
+                    "Company name",
+                    "Recommender type",
                     "Acceptation Status",
                 ],
             )
