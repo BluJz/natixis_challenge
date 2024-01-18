@@ -114,4 +114,21 @@ def main():
 
 
 if __name__ == "__main__":
+    if "my_variable" not in st.session_state:
+        st.session_state.my_variable = "Initial Value"
+    # Define the initial value of the variable
+    my_variable = "Initial Value"
+
+    # Create a button to update the variable
+    if st.button("Update Variable"):
+        my_variable = "New Value"  # Update the variable when the button is clicked
+        st.session_state.my_variable = (
+            my_variable  # Store the updated value in session_state
+        )
+    if st.button("Reset"):
+        st.success("Reset done !")
+
+    # Display the variable value
+    st.write(f"My Variable: {st.session_state.my_variable}")
+
     main()
