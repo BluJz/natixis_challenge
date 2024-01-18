@@ -10,6 +10,7 @@ from model_pipeline import (
 from sqlalchemy import create_engine
 from models_feedback_sql import Feedback
 from sqlalchemy.orm import sessionmaker
+import json
 
 
 def set_header_color():
@@ -105,6 +106,56 @@ def isin_code_form():
     return isin_code
 
 
+def set_investor_recommender_initial_mode():
+    st.session_state.show_investor_recommender_initial = True
+    st.session_state.show_isin_code_form = False
+    st.session_state.show_isin_features_form = False
+    st.session_state.isin_code = None
+    st.session_state.isin_features = None
+    st.session_state.result_mode_bond_isin_code = False
+    st.session_state.result_mode_bond_isin_features = False
+
+
+def set_isin_code_form_mode():
+    st.session_state.show_investor_recommender_initial = False
+    st.session_state.show_isin_code_form = True
+    st.session_state.show_isin_features_form = False
+    st.session_state.isin_code = None
+    st.session_state.isin_features = None
+    st.session_state.result_mode_bond_isin_code = False
+    st.session_state.result_mode_bond_isin_features = False
+
+
+def set_isin_features_form_mode():
+    st.session_state.show_investor_recommender_initial = False
+    st.session_state.show_isin_code_form = False
+    st.session_state.show_isin_features_form = True
+    st.session_state.isin_code = None
+    st.session_state.isin_features = None
+    st.session_state.result_mode_bond_isin_code = False
+    st.session_state.result_mode_bond_isin_features = False
+
+
+def set_result_mode_from_isin_code(isin_code):
+    st.session_state.show_investor_recommender_initial = False
+    st.session_state.show_isin_code_form = False
+    st.session_state.show_isin_features_form = False
+    st.session_state.isin_code = isin_code
+    st.session_state.isin_features = None
+    st.session_state.result_mode_bond_isin_code = True
+    st.session_state.result_mode_bond_isin_features = False
+
+
+def set_result_mode_from_isin_features(isin_features):
+    st.session_state.show_investor_recommender_initial = False
+    st.session_state.show_isin_code_form = False
+    st.session_state.show_isin_features_form = False
+    st.session_state.isin_code = None
+    st.session_state.isin_features = isin_features
+    st.session_state.result_mode_bond_isin_code = False
+    st.session_state.result_mode_bond_isin_features = True
+
+
 def main():
     set_header_color()
 
@@ -122,62 +173,142 @@ def main():
         model_hash,
     ) = global_run(file_path=rqf_path)
 
+    if "show_investor_recommender_initial" not in st.session_state:
+        st.session_state.show_investor_recommender_initial = True
+    if "show_isin_code_form" not in st.session_state:
+        st.session_state.show_isin_code_form = False
+    if "show_isin_features_form" not in st.session_state:
+        st.session_state.show_isin_features_form = False
+    if "result_mode_bond_isin_code" not in st.session_state:
+        st.session_state.result_mode_bond_isin_code = False
+    if "result_mode_bond_isin_features" not in st.session_state:
+        st.session_state.result_mode_bond_isin_features = False
+
+    if "isin_code" not in st.session_state:
+        st.session_state.isin_code = None
+    if "isin_features" not in st.session_state:
+        st.session_state.isin_features = None
+
     isin_code = None
     isin_features = None
     client_hist_new_bond = None
     client_recent_new_bond = None
     bonds_new_bond = None
 
-    if "show_isin_code_form" not in st.session_state:
-        st.session_state.show_isin_code_form = False
-    if "show_isin_features_form" not in st.session_state:
-        st.session_state.show_isin_features_form = False
-    if "result_mode" not in st.session_state:
-        st.session_state.result_mode = False
+    placeholder = st.empty()
 
-    st.title("ISIN-Based Company Recommender")
-    st.write(
-        "Enter an ISIN code or fill an ISIN features form and get recommended companies"
-    )
+    if st.session_state.show_investor_recommender_initial:
+        with placeholder.container():
+            st.title("ISIN-Based Company Recommender")
+            st.write(
+                "Enter an ISIN code or fill an ISIN features form and get recommended companies"
+            )
 
-    # Layout: Two columns
-    col1, col2 = st.columns(2)
+            # Layout: Two columns
+            col1, col2 = st.columns(2)
 
-    with col1:
-        submit_new_isin_code_button = st.button(
-            "Submit new ISIN code (only)", key="submit_new_isin_code"
-        )
-    with col2:
-        submit_new_isin_features_button = st.button(
-            "Submit new ISIN features", key="submit_new_isin_features"
-        )
+            with col1:
+                submit_new_isin_code_button = st.button(
+                    "Submit new ISIN code",
+                    on_click=set_isin_code_form_mode,
+                    key="submit_new_isin_code",
+                )
+            with col2:
+                submit_new_isin_features_button = st.button(
+                    "Submit new ISIN features",
+                    on_click=set_isin_features_form_mode,
+                    key="submit_new_isin_features",
+                )
 
-    if submit_new_isin_features_button:
-        if not st.session_state.result_mode:
-            st.session_state.show_isin_features_form = True
-            st.session_state.show_isin_code_form = False
-    elif submit_new_isin_code_button:
-        if not st.session_state.result_mode:
-            st.session_state.show_isin_code_form = True
-            st.session_state.show_isin_features_form = False
+    if st.session_state.show_isin_code_form:
+        with placeholder.container():
+            st.subheader("Enter ISIN code: ")
+            isin_code = isin_code_form()
+            submit_isin_code_button = st.button(
+                "Submit",
+                on_click=set_result_mode_from_isin_code,
+                args=[isin_code],
+                key="submit_isin_code",
+            )
 
-    if not st.session_state.result_mode:
-        if st.session_state.show_isin_features_form:
+    if st.session_state.show_isin_features_form:
+        with placeholder.container():
             st.subheader("Enter ISIN new bond features: ")
             isin_features = isin_features_form()
             submit_isin_features_button = st.button(
-                "Submit", key="submit_isin_features"
+                "Submit",
+                on_click=set_result_mode_from_isin_features,
+                args=[isin_features],
+                key="submit_isin_features",
             )
 
-            if submit_isin_features_button:
-                st.success("ISIN features submitted")
+    if st.session_state.result_mode_bond_isin_code:
+        if st.session_state.isin_code is not None:
+            with placeholder.container():
+                (
+                    client_hist_new_bond,
+                    client_recent_new_bond,
+                    bonds_new_bond,
+                ) = recommender_isin_code(
+                    isin_code=st.session_state.isin_code,
+                    isin_to_features_dict=isin_to_features_dict,
+                    client_apetite_dict_hist=client_apetite_dict_hist,
+                    client_apetite_dict_recent=client_apetite_dict_recent,
+                    features=features,
+                    df_unique=df_unique,
+                    n=3,
+                )
 
+                # Layout: Two columns
+                col1, col2 = st.columns(2)
+
+                # Column 1: ISIN Input and Statistics
+                with col1:
+                    st.subheader("ISIN Code Statistics: ")
+                    isin_stats = get_isin_statistics(st.session_state.isin_code)
+                    if isin_stats is not None:
+                        donnees = []
+                        for item in isin_stats:
+                            donnees += [item]
+                        df_isin_stats = pd.DataFrame(
+                            donnees,
+                            columns=["Total Traded Volume", "Mid Price($)", "Rating"],
+                        )
+                        st.table(df_isin_stats)
+                    else:
+                        st.write("Not available")
+
+                    st.subheader("Most similar bonds: ")
+                    st.dataframe(bonds_new_bond)
+
+                    add_isin_code_feedback(
+                        isin_code=st.session_state.isin_code,
+                        model_hash=model_hash,
+                        recommandations=client_recent_new_bond,
+                    )
+
+                # Column 2: Company Recommendations and Statistics
+                with col2:
+                    st.subheader("Recommended Companies for ISIN:", isin_code)
+                    if client_recent_new_bond is not None:
+                        for company in client_recent_new_bond:
+                            st.write(f"Company: {company}")
+
+                reset_button = st.button(
+                    "Reset",
+                    on_click=set_investor_recommender_initial_mode,
+                    key="reset_button",
+                )
+
+    if st.session_state.result_mode_bond_isin_features:
+        if st.session_state.isin_features is not None:
+            with placeholder.container():
                 (
                     client_hist_new_bond,
                     client_recent_new_bond,
                     bonds_new_bond,
                 ) = recommender_isin_features(
-                    isin_features=isin_features,
+                    isin_features=st.session_state.isin_features,
                     scaler=scaler,
                     one_hot_encoder=one_hot_encoder,
                     client_apetite_dict_hist=client_apetite_dict_hist,
@@ -187,83 +318,40 @@ def main():
                     n=3,
                 )
 
-                st.session_state.show_isin_features_form = False
-                st.session_state.result_mode = True
+                # Layout: Two columns
+                col1, col2 = st.columns(2)
 
-        if st.session_state.show_isin_code_form:
-            st.subheader("Enter ISIN code: ")
-            isin_code = isin_code_form()
-            submit_isin_code_button = st.button("Submit", key="submit_isin_code")
+                # Column 1: ISIN Input and Statistics
+                with col1:
+                    st.subheader("ISIN Features: ")
+                    # Convert date objects to strings
+                    displayed_isin_features = st.session_state.isin_features.copy()
+                    for key, value in displayed_isin_features.items():
+                        if isinstance(value, date):
+                            displayed_isin_features[key] = value.strftime("%Y-%m-%d")
+                    st.write(json.dumps(displayed_isin_features, indent=4))
 
-            if submit_isin_code_button:
-                st.success("ISIN code submitted")
+                    st.subheader("Most similar bonds: ")
+                    st.dataframe(bonds_new_bond)
 
-                (
-                    client_hist_new_bond,
-                    client_recent_new_bond,
-                    bonds_new_bond,
-                ) = recommender_isin_code(
-                    isin_code=isin_code,
-                    isin_to_features_dict=isin_to_features_dict,
-                    client_apetite_dict_hist=client_apetite_dict_hist,
-                    client_apetite_dict_recent=client_apetite_dict_recent,
-                    features=features,
-                    df_unique=df_unique,
-                    n=3,
+                    add_isin_features_feedback(
+                        isin_features=st.session_state.isin_features,
+                        model_hash=model_hash,
+                        recommandations=client_recent_new_bond,
+                    )
+
+                # Column 2: Company Recommendations and Statistics
+                with col2:
+                    st.subheader("Recommended Companies for ISIN:", isin_code)
+                    if client_recent_new_bond is not None:
+                        for company in client_recent_new_bond:
+                            st.write(f"Company: {company}")
+
+                reset_button = st.button(
+                    "Reset",
+                    on_click=set_investor_recommender_initial_mode,
+                    key="reset_button",
                 )
-
-                st.session_state.show_isin_code_form = False
-                st.session_state.result_mode = True
-
-    if st.session_state.result_mode:
-        st.session_state.show_isin_code_form = False
-        st.session_state.show_isin_features_form = False
-        # Column 1: ISIN Input and Statistics
-        with col1:
-            st.subheader("ISIN Code Statistics: ")
-            isin_stats = get_isin_statistics(isin_code)
-            if isin_stats is not None:
-                donnees = []
-                for item in isin_stats:
-                    donnees += [item]
-                df_isin_stats = pd.DataFrame(
-                    donnees, columns=["Total Traded Volume", "Mid Price($)", "Rating"]
-                )
-                st.table(df_isin_stats)
-            else:
-                st.write("Not available")
-
-            st.subheader("Most similar bonds: ")
-            st.dataframe(bonds_new_bond)
-
-            if isin_code is not None:
-                add_isin_code_feedback(
-                    isin_code=isin_code,
-                    model_hash=model_hash,
-                    recommandations=client_recent_new_bond,
-                )
-            elif isin_features is not None:
-                add_isin_features_feedback(
-                    isin_features=isin_features,
-                    model_hash=model_hash,
-                    recommandations=client_recent_new_bond,
-                )
-
-        # Column 2: Company Recommendations and Statistics
-        with col2:
-            st.subheader("Recommended Companies for ISIN:", isin_code)
-            if client_recent_new_bond is not None:
-                for company in client_recent_new_bond:
-                    st.write(f"Company: {company}")
-                    # company_stats = get_company_statistics(company)  # TODO
-                    # st.write("Company Statistics:")
-                    # for key, value in company_stats.items():
-                    #     st.write(f"{key}: {value}")
-                    # st.write("---")
-
-        reset_button = st.button("Reset", key="reset_button")
-        if reset_button:
-            st.session_state.result_mode = False
 
 
 def add_isin_code_feedback(isin_code, model_hash, recommandations):
@@ -399,5 +487,4 @@ def add_isin_features_feedback(isin_features, model_hash, recommandations):
 
 # Run the page function
 if __name__ == "__main__":
-    # Problems: the 'Submitted' form is still displayed after submitting the button
     main()

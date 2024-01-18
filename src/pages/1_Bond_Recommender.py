@@ -54,7 +54,6 @@ def set_result_mode(company_short_name):
 
 
 def set_form_mode():
-    print("callback")
     st.session_state.bond_recommender_company_short_name = None
     st.session_state.show_client_form = True
     st.session_state.result_mode_client = False
@@ -83,6 +82,7 @@ def main():
         st.session_state.result_mode_client = False
     if "bond_recommender_company_short_name" not in st.session_state:
         st.session_state.bond_recommender_company_short_name = None
+
     company_short_name = None
 
     placeholder = st.empty()
@@ -214,5 +214,4 @@ def add_client_feedback(client_name, model_hash, recommandations):
 
 # Run the page function
 if __name__ == "__main__":
-    # Problems: have to click twice on the reset button
     main()
