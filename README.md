@@ -57,7 +57,7 @@ Now you're all set !
 # Usage
  To run on data :
  ```pyhton
- python src/main.py
+ python src/Welcome.py
  ```
 
 # Dockerize
@@ -71,3 +71,5 @@ Danli Liu
 François Moreau 
 Matthieu Haguenauer
 Marine Chouraqui
+Xinyu Lai
+Shihan Ye
