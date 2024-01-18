@@ -390,7 +390,7 @@ def main():
                     )
 
                 # Column 2: Company Recommendations and Statistics
-                with col2:
+                 with col2:
                     # st.subheader("Recommended Companies for ISIN:", isin_code)
                     # if client_recent_new_bond is not None:
                     #     for company in client_recent_new_bond:
@@ -417,11 +417,11 @@ def main():
                         )
                         st.table(df_company_stats)
 
-                reset_button = st.button(
-                    "Reset",
-                    on_click=set_investor_recommender_initial_mode,
-                    key="reset_button",
-                )
+            reset_button = st.button(
+                "Reset",
+                on_click=set_investor_recommender_initial_mode,
+                key="reset_button",
+            )
 
 
 def add_isin_code_feedback(isin_code, model_hash, recommandations):
