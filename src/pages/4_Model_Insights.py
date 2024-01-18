@@ -2,6 +2,12 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import mlflow
+from sqlalchemy import create_engine, Column, String
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from models_db_creation import Models
+from models_feedback_sql import Feedback
+from collections import Counter
 
 
 def set_header_color():
@@ -26,77 +32,23 @@ def set_header_color():
     )
 
 
-def get_and_display_column_names():
-    """Get and displays the columns available in the src/models.mlruns database when called directly in the streamlit app."""
-    # Connect to the MLflow tracking server
-    mlflow.set_tracking_uri("sqlite:///src/models/mlruns.db")
-
-    # Streamlit UI layout
-    st.title("Columns in mlruns.db Database")
-
-    # Get all registered experiments
-    experiments = mlflow.search_runs()
-    if not experiments.empty:
-        st.subheader("Columns in 'experiments' Table:")
-        st.write(experiments.columns.tolist())
-    else:
-        st.write("No data found in 'experiments' table.")
-
-    # Close the database connection
-    mlflow.end_run()
-
-
-def get_and_display_sidebar():
+def get_and_display_sidebar(session):
     """Gets and displays in the form of a sidebar to select the models in the mlruns database directly in the streamlit app."""
-    # Connect to the 'mlruns.db' database
-    conn = sqlite3.connect("src/models/mlruns.db")
-    cursor = conn.cursor()
+    # Connect to the 'models.db' database
+    st.sidebar.title("Select a Model")
 
-    cursor.execute(
-        """
-    SELECT DISTINCT runs.run_uuid, runs.end_time, tags.value, params.value AS model_name
-    FROM runs
-    LEFT JOIN tags ON runs.run_uuid = tags.run_uuid
-    LEFT JOIN params ON runs.run_uuid = params.run_uuid
-    WHERE tags.key = 'save_model_for_usage' AND tags.value = 'true' AND params.key = 'model_name'
-    ORDER BY runs.end_time DESC
-    """
-    )
-    models_data = cursor.fetchall()
-    if not models_data:
-        models_data = None
+    # Retrieve the list of model names and model hashes from the database
+    models = session.query(Models.model_name, Models.model_hash).all()
+    model_names = [model[0] for model in models]
+    model_hashes = {model[0]: model[1] for model in models}
 
-    # Sidebar with model selection
-    st.sidebar.header("Select a model: ")
-    models = models_data
-    if models:
-        selected_model = st.sidebar.selectbox(
-            "Available Models", models, format_func=lambda x: x[3]
-        )
-    else:
-        st.sidebar.write("No available models.")
+    # Create a selectbox in the sidebar for model selection
+    selected_model_name = st.sidebar.selectbox("Choose a Model", model_names)
 
-    # Close the database connection
-    conn.close()
+    # Get the corresponding model_hash using the selected model name
+    selected_model_hash = model_hashes.get(selected_model_name, None)
 
-    return selected_model[0], selected_model[3]
-
-
-def get_and_display_documentation(selected_model_name):
-    # Create a dictionary to map model names to Wikipedia URLs
-    model_wikipedia_links = {
-        "Random Forest Regressor": "https://en.wikipedia.org/wiki/Random_forest",
-        "Decision Tree Regressor": "https://en.wikipedia.org/wiki/Decision_tree_learning",
-        "XGBoost Regressor": "https://en.wikipedia.org/wiki/XGBoost",
-        "Linear Regression": "https://en.wikipedia.org/wiki/Linear_regression",
-    }
-
-    # Display the selected model's Wikipedia link
-    if selected_model_name in model_wikipedia_links:
-        wikipedia_url = model_wikipedia_links[selected_model_name]
-        st.markdown(f"**[Documentation for {selected_model_name}]({wikipedia_url})**")
-    else:
-        st.write("There is no available documentation for the moment.")
+    return selected_model_hash
 
 
 def display_progress_bar(title, progress_value):
@@ -120,135 +72,56 @@ def display_progress_bar(title, progress_value):
     )
 
 
-def get_and_display_params(selected_model_id):
-    # Connect to the 'mlruns.db' database
-    conn = sqlite3.connect("src/models/mlruns.db")
-    cursor = conn.cursor()
-
-    # Query the parameters for the selected run
-    cursor.execute(
-        f"""
-        SELECT key AS Parameter, value AS Value
-        FROM params
-        WHERE run_uuid = '{selected_model_id}'
-    """
+# Function to retrieve model description based on selected_model_hash
+def get_model_name_and_description(selected_model_hash, session):
+    # Query the database to get the model description for the selected model hash
+    model = (
+        session.query(Models).filter(Models.model_hash == selected_model_hash).first()
     )
-    parameters_data = cursor.fetchall()
 
-    # Check if parameters were found for the selected run
-    if not parameters_data:
-        st.write(f"No parameters found for run with run_uuid: {selected_model_id}")
+    if model:
+        return model.model_name, model.model_description
     else:
-        # Create a DataFrame from the retrieved parameters data
-        parameters_df = pd.DataFrame(parameters_data, columns=["Parameter", "Value"])
-
-        subheader_style = """
-            <style>
-            .custom-subheader {
-                font-size: 20px;  /* Adjust the font size as needed */
-                color: #F5BBF4;  /* Change the color to your desired value */
-            }
-            </style>   
-        """
-        # Display the parameters in a table
-        st.write(subheader_style, unsafe_allow_html=True)
-        st.markdown(
-            "<p class='custom-subheader'>Parameters for Selected Run</p>",
-            unsafe_allow_html=True,
-        )
-
-        # Apply custom CSS to center-align the table
-        table_style = """
-            <style>
-                .center-table {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-            </style>
-        """
-        st.write(table_style, unsafe_allow_html=True)
-        st.write(
-            f"<div class='center-table'>{parameters_df.to_html(index=False)}</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.write("#")
-
-    # Close the database connection
-    conn.close()
+        return None, None
 
 
-def get_feedback(selected_model_id):
-    try:
-        # Connect to the 'feedback.db' database
-        conn = sqlite3.connect("src/models/fake_feedback.db")
-        cursor = conn.cursor()
+def get_feedback_details(selected_model_hash):
+    # Create a SQLAlchemy engine and session
+    engine_feedback = create_engine(
+        "sqlite:///src/models/feedback.db"
+    )  # Replace with your database file path
+    Session_feedback = sessionmaker(bind=engine_feedback)
+    session_feedback = Session_feedback()
 
-        # Query the rows with the specified 'run_uuid'
-        cursor.execute(
-            f"""
-            SELECT COUNT(*) AS num_rows, SUM(amount) AS total_amount, 
-                   (SUM(acception_status) * 100.0 / COUNT(*)) AS acceptance_percentage
-            FROM feedback
-            WHERE run_uuid = ?
-        """,
-            (selected_model_id,),
-        )
+    # Query the database to get feedback data for the selected model_hash
+    feedback_data = (
+        session_feedback.query(Feedback).filter_by(model_hash=selected_model_hash).all()
+    )
 
-        # Fetch the result
-        result = cursor.fetchone()
+    # Get the number of feedback entries for the selected model_hash
+    num_feedback = len(feedback_data)
 
-        if result:
-            num_rows, total_amount, acceptance_percentage = result
-            return num_rows, total_amount, acceptance_percentage
-        else:
-            return 0, 0, 0  # No matching rows found
+    # Calculate the percentage of feedback entries for the selected model_hash
+    total_entries = session_feedback.query(Feedback).count()
+    percentage = num_feedback / total_entries if total_entries > 0 else 0
 
-    except sqlite3.Error as e:
-        print(f"SQLite error: {e}")
-        return None
+    # Calculate the most represented category in 'recommender_type'
+    recommender_types = [feedback.recommender_type for feedback in feedback_data]
+    most_common_category = None
+    if recommender_types:
+        counter = Counter(recommender_types)
+        most_common_category = counter.most_common(1)[0][0]
 
-    finally:
-        # Close the database connection
-        conn.close()
+    # Close the session
+    session_feedback.close()
+
+    return num_feedback, percentage, most_common_category
 
 
-def display_feedback(num_rows, total_amount, acceptance_percentage):
+def display_feedback(num_feedback, percentage, most_common_category):
     # Display feedback summary
-    if num_rows > 0:
+    if num_feedback > 0:
         st.subheader("Feedback Summary")
-        # st.write(f"Number of Rows: {num_rows}")
-        # st.write(f"Total Amount: {total_amount}")
-        # st.write(f"Acceptance Percentage: {acceptance_percentage:.2f}%")
-
-        # # Three KPIs with different values and colors
-        # kpi1_value = 100
-        # kpi2_value = 75
-        # kpi3_value = 90
-
-        # # Define custom CSS styles for each KPI
-        # kpi1_style = (
-        #     "color: #F5BBF4; font-size: 18px; padding: 10px; text-aligne: center;"
-        # )
-        # kpi2_style = (
-        #     "color: #F5BBD7; font-size: 18px; padding: 10px; text-aligne: center;"
-        # )
-        # kpi3_style = (
-        #     "color: #D9BBF5; font-size: 18px; padding: 10px; text-aligne: center;"
-        # )
-
-        # # Create a layout using HTML and CSS to display the KPIs on the same row
-        # kpi_layout = f"""
-        #     <div style="display: flex; justify-content: space-between;">
-        #         <div style="{kpi1_style}">Number of investments: {num_rows}</div>
-        #         <div style="{kpi2_style}">Amount invested: {total_amount}</div>
-        #         <div style="{kpi3_style}">Acceptation percentage: {acceptance_percentage:.2f}</div>
-        #     </div>
-        # """
-
-        # # Display the KPI layout using st.markdown
-        # st.markdown(kpi_layout, unsafe_allow_html=True)
 
         # Create a layout for the table with centered text in each cell
         kpi_table_layout = """
@@ -264,60 +137,186 @@ def display_feedback(num_rows, total_amount, acceptance_percentage):
             </style>
             <table>
                 <tr>
-                    <th>Number of investments</th>
-                    <th>Amount invested</th>
-                    <th>Acceptation percentage</th>
+                    <th>Number of feedbacks</th>
+                    <th>Percentage of feedback entries</th>
+                    <th>Most common recommender type</th>
                 </tr>
                 <tr>
                     <td>{}</td>
                     <td>{:.1f}</td>
-                    <td>{:.2f}</td>
+                    <td>{}</td>
                 </tr>
             </table>
         """.format(
-            int(num_rows), total_amount, acceptance_percentage
+            int(num_feedback), percentage, most_common_category
         )
 
         # Display the table layout using st.markdown
         st.markdown(kpi_table_layout, unsafe_allow_html=True)
 
     else:
-        st.warning("No feedback data found for the specified run_uuid.")
+        st.warning("No feedback data found for the specified hash model.")
 
 
-def main_display_model_insights(selected_model_id, selected_model_name):
-    set_header_color()
-    st.write(
-        f"<h1 style='text-align: center;'>Model insights: {selected_model_name}</h1>",
-        unsafe_allow_html=True,
+def calculate_accepted_percentage(selected_model_hash):
+    # Create a SQLAlchemy engine and session
+    engine_feedback = create_engine(
+        "sqlite:///src/models/feedback.db"
+    )  # Replace with your database file path
+    Session_feedback = sessionmaker(bind=engine_feedback)
+    session_feedback = Session_feedback()
+
+    # Query the database to count the number of accepted recommendations
+    total_count = (
+        session_feedback.query(Feedback)
+        .filter_by(model_hash=selected_model_hash)
+        .count()
+    )
+    accepted_count = (
+        session_feedback.query(Feedback)
+        .filter_by(model_hash=selected_model_hash, acceptation_status="Accepted")
+        .count()
     )
 
-    # Horizontal separator
-    st.markdown("<hr>", unsafe_allow_html=True)
+    # Calculate the percentage
+    if total_count > 0:
+        percentage = accepted_count / total_count
+    else:
+        percentage = 0.0
 
-    get_and_display_params(selected_model_id)
+    # Close the session
+    session_feedback.close()
 
-    get_and_display_documentation(selected_model_name)
+    return percentage
 
-    # Horizontal separator
-    st.markdown("<hr>", unsafe_allow_html=True)
 
-    display_progress_bar("Training accuracy metric", 0.56)
+def set_add_model_mode():
+    st.session_state.add_model_mode = True
+    st.session_state.model_insights_mode = False
 
-    # Horizontal separator
-    st.markdown("<hr>", unsafe_allow_html=True)
 
-    num_rows, total_amount, acceptance_percentage = get_feedback(selected_model_id)
-    display_feedback(num_rows, total_amount, acceptance_percentage)
+def add_model_form():
+    st.header("Adding model form")
+    # Create a dictionary to store bond information
+    model_info = {
+        "model_hash": "NEW",
+        "model_name": "",
+        "model_description": "",
+        "model_parameters": "",
+    }
+
+    st.write("Enter New Model Information: (Don't forget to press enter!)")
+
+    # Create input fields for bond information
+    model_info["model_hash"] = st.text_input("Model hash: ", model_info["model_hash"])
+    model_info["model_name"] = st.text_input("Model name: ", model_info["model_name"])
+    model_info["model_description"] = st.text_input(
+        "Model description: ", model_info["model_description"]
+    )
+    model_info["model_parameters"] = st.text_input(
+        "Model parameters: ", model_info["model_parameters"]
+    )
+
+    return model_info
+
+
+def add_model_to_db(model_info):
+    feedback_db_uri = "sqlite:///src/models/models.db"
+    engine = create_engine(feedback_db_uri)
+
+    if model_info is not None:
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            models_entry = Models(
+                model_hash=model_info["model_hash"],
+                model_name=model_info["model_name"],
+                model_description=model_info["model_description"],
+                model_parameters=model_info["model_parameters"],
+            )
+
+            session.add(models_entry)
+            session.commit()
+
+        # st.success("Model added !")
+
+    st.session_state.add_model_mode = False
+    st.session_state.model_insights_mode = True
+
+
+def main():
+    if "model_insights_mode" not in st.session_state:
+        st.session_state.model_insights_mode = True
+    if "add_model_mode" not in st.session_state:
+        st.session_state.add_model_mode = False
+
+    # Create a SQLAlchemy engine and session
+    engine = create_engine(
+        "sqlite:///src/models/models.db"
+    )  # Replace with your database URL
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    # Create a declarative base
+    # Base = declarative_base()
+
+    placeholder = st.empty()
+
+    if st.session_state.model_insights_mode:
+        with placeholder.container():
+            st.subheader("Feel free to add a model: ")
+            add_model_button = st.button(
+                "Add model", on_click=set_add_model_mode, key="set_add_model_mode"
+            )
+
+            selected_model_hash = get_and_display_sidebar(session=session)
+            if selected_model_hash:
+                model_name, model_description = get_model_name_and_description(
+                    selected_model_hash, session=session
+                )
+                if model_name and model_description:
+                    st.header(model_name)
+                    st.write(model_description)
+
+                    st.divider()
+
+                    feedback_acception_percentage = calculate_accepted_percentage(
+                        selected_model_hash
+                    )
+                    display_progress_bar(
+                        title="Feedback acception percentage",
+                        progress_value=feedback_acception_percentage,
+                    )
+
+                    st.divider()
+
+                    (
+                        num_feedback,
+                        percentage,
+                        most_common_category,
+                    ) = get_feedback_details(selected_model_hash)
+                    display_feedback(
+                        num_feedback=num_feedback,
+                        percentage=percentage,
+                        most_common_category=most_common_category,
+                    )
+
+                else:
+                    st.warning("Model not found.")
+            else:
+                st.write("No model selected.")
+
+    if st.session_state.add_model_mode:
+        with placeholder.container():
+            model_info = add_model_form()
+
+            submit_model_info_button = st.button(
+                "Submit and add model",
+                on_click=add_model_to_db,
+                args=[model_info],
+                key="submit_model_info_button",
+            )
 
 
 # Run the page function
 if __name__ == "__main__":
-    # get_and_display_column_names()
-    # mlflow_db_button = st.button("Visualize updated database: ", key="mlflow_db_viz")
-    # if mlflow_db_button:
-    #     get_and_display_mlruns()
-
-    selected_model_id, selected_model_name = get_and_display_sidebar()
-
-    main_display_model_insights(selected_model_id, selected_model_name)
+    main()

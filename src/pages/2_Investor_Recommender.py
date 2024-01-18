@@ -65,11 +65,6 @@ def get_isin_statistics(isin_code):
     return sql_querier(query)
 
 
-# def get_company_statistics(company_name):
-#     # Replace with actual logic to fetch company statistics
-#     return {"Revenue": "200M", "Employees": "1000"}
-
-
 def get_company_statistics(company_name):
     query = f"""
     SELECT 
