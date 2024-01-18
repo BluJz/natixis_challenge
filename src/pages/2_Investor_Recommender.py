@@ -178,6 +178,11 @@ def set_result_mode_from_isin_features(isin_features):
     st.session_state.result_mode_bond_isin_code = False
     st.session_state.result_mode_bond_isin_features = True
 
+def refresh_recommendations_isin_code():
+    st.session_state.refresh_count_isin_code += 1
+
+def refresh_recommendations_isin_features():
+    st.session_state.refresh_count_isin_features += 1
 
 def main():
     set_header_color()
@@ -268,11 +273,10 @@ def main():
     if st.session_state.result_mode_bond_isin_code:
         if st.session_state.isin_code is not None:
             with placeholder.container():
-                (
-                    client_hist_new_bond,
-                    client_recent_new_bond,
-                    bonds_new_bond,
-                ) = recommender_isin_code(
+                if "refresh_count_isin_code" not in st.session_state:
+                    st.session_state.refresh_count_isin_code = 0
+
+                (client_hist_new_bond, client_recent_new_bond, bonds_new_bond) = recommender_isin_code(
                     isin_code=st.session_state.isin_code,
                     isin_to_features_dict=isin_to_features_dict,
                     client_apetite_dict_hist=client_apetite_dict_hist,
@@ -280,6 +284,7 @@ def main():
                     features=features,
                     df_unique=df_unique,
                     n=3,
+                    offset=3 * st.session_state.refresh_count_isin_code,
                 )
 
                 # Layout: Two columns
@@ -343,15 +348,21 @@ def main():
                     on_click=set_investor_recommender_initial_mode,
                     key="reset_button",
                 )
+                
+                # For ISIN codes Recommendations
+                refresh_button_isin_code = st.button(
+                    "Refresh ISIN Code Recommendations",
+                    on_click=refresh_recommendations_isin_code,
+                    key="refresh_button_isin_code",
+                )
 
     if st.session_state.result_mode_bond_isin_features:
         if st.session_state.isin_features is not None:
             with placeholder.container():
-                (
-                    client_hist_new_bond,
-                    client_recent_new_bond,
-                    bonds_new_bond,
-                ) = recommender_isin_features(
+                if "refresh_count_isin_features" not in st.session_state:
+                    st.session_state.refresh_count_isin_features = 0
+
+                (client_hist_new_bond, client_recent_new_bond, bonds_new_bond) = recommender_isin_features(
                     isin_features=st.session_state.isin_features,
                     scaler=scaler,
                     one_hot_encoder=one_hot_encoder,
@@ -360,6 +371,7 @@ def main():
                     features=features,
                     df_unique=df_unique,
                     n=3,
+                    offset=3 * st.session_state.refresh_count_isin_features,
                 )
 
                 # Layout: Two columns
@@ -416,6 +428,13 @@ def main():
                     "Reset",
                     on_click=set_investor_recommender_initial_mode,
                     key="reset_button",
+                )
+
+                # For ISIN Features Recommendations
+                refresh_button_isin_features = st.button(
+                    "Refresh ISIN Features Recommendations",
+                    on_click=refresh_recommendations_isin_features,
+                    key="refresh_button_isin_features",
                 )
 
 

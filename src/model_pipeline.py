@@ -71,6 +71,7 @@ def recommender_isin_code(
     features=None,
     df_unique=None,
     n=3,
+    offset=0,  # New offset parameter
 ):
     new_bond_features = isin_to_features_dict[isin_code].reshape(1, -1)
     client_hist_new_bond = bond_to_n_client(
@@ -87,6 +88,24 @@ def recommender_isin_code(
         df_unique=df_unique,
         n=n,
     )
+
+    all_client_recs = bond_to_n_client(
+        bond_vect=new_bond_features, 
+        client_apetite_dict=client_apetite_dict_hist, 
+        n=n+offset,  # Fetch extra recommendations
+    )
+
+    all_recommendations = find_top_n_similar_bonds(
+        new_bond_features=new_bond_features,
+        existing_features=features,
+        df_unique=df_unique,
+        n=n+offset,  # Fetch extra recommendations
+    )
+
+    # Apply the offset and limit
+    bonds_new_bond = all_recommendations[offset:offset+n]
+    client_recs = all_client_recs[offset:offset+n]
+
     return client_hist_new_bond, client_recent_new_bond, bonds_new_bond
 
 
@@ -99,6 +118,7 @@ def recommender_isin_features(
     features=None,
     df_unique=None,
     n=3,
+    offset=0,  # New offset parameter
 ):
     new_bond_df = new_bond_to_df(isin_features)
     new_bond_vec = new_bond_to_vec(
@@ -119,6 +139,23 @@ def recommender_isin_features(
         df_unique=df_unique,
         n=n,
     )
+
+    all_client_recs = bond_to_n_client(
+        bond_vect=new_bond_vec, 
+        client_apetite_dict=client_apetite_dict_hist, 
+        n=n+offset,  # Fetch extra recommendations
+    )
+
+    all_recommendations = find_top_n_similar_bonds(
+        new_bond_features=new_bond_vec,
+        existing_features=features,
+        df_unique=df_unique,
+        n=n+offset,  # Fetch extra recommendations
+    )
+
+    # Apply the offset and limit
+    bonds_new_bond = all_recommendations[offset:offset+n]
+    client_recs = all_client_recs[offset:offset+n]
 
     return client_hist_new_bond, client_recent_new_bond, bonds_new_bond
 
