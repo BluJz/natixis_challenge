@@ -21,7 +21,8 @@ def set_header_color():
         color: #B981EC;
     }
     </style>
-    """, unsafe_allow_html=True,
+    """,
+        unsafe_allow_html=True,
     )
 
 

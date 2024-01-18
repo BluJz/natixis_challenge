@@ -35,6 +35,21 @@ def set_header_color():
     )
 
 
+# # Placeholder functions for backend logic
+# def get_isin_statistics(isin_code):
+#     query = f"""SELECT
+#     (SELECT SUM(Total_Traded_Volume) FROM ma_table WHERE ISIN = "{isin_code}") AS Total_Volume,
+#     sub.MidPrice,
+#     sub.Rating_Moodys AS Risk
+#     FROM
+#     (SELECT MidPrice, Rating_Moodys, Deal_Date
+#     FROM ma_table
+#     WHERE ISIN = "{isin_code}"
+#     ORDER BY Deal_Date DESC
+#     LIMIT 1) sub;"""
+#     return sql_querier(query)
+
+
 # Placeholder functions for backend logic
 def get_isin_statistics(isin_code):
     query = f"""SELECT 
@@ -50,18 +65,31 @@ def get_isin_statistics(isin_code):
     return sql_querier(query)
 
 
-def get_company_recommendations(isin_code):
-    # Replace with actual logic to get company recommendations
-    return [
-        ("Company A", "Strong growth"),
-        ("Company B", "Stable market leader"),
-        ("Company C", "Innovative startup"),
-    ]
+# def get_company_statistics(company_name):
+#     # Replace with actual logic to fetch company statistics
+#     return {"Revenue": "200M", "Employees": "1000"}
 
 
 def get_company_statistics(company_name):
-    # Replace with actual logic to fetch company statistics
-    return {"Revenue": "200M", "Employees": "1000"}
+    query = f"""
+    SELECT 
+        '{company_name}' AS company_name,
+        SUM(Total_Traded_Volume * B_price) AS Total_Traded_Volume,
+        (
+            SELECT BloomIndustrySector 
+            FROM ma_table 
+            WHERE company_short_name = "{company_name}"
+            GROUP BY BloomIndustrySector 
+            ORDER BY COUNT(*) DESC 
+            LIMIT 1
+        ) AS Favorite_investment_sector
+    FROM 
+        ma_table 
+    WHERE 
+        company_short_name = "{company_name}"
+    LIMIT 3;
+    """
+    return sql_querier(query)
 
 
 def isin_features_form():
@@ -289,10 +317,31 @@ def main():
 
                 # Column 2: Company Recommendations and Statistics
                 with col2:
-                    st.subheader("Recommended Companies for ISIN:", isin_code)
+                    # st.subheader("Recommended Companies for ISIN:", isin_code)
+                    # if client_recent_new_bond is not None:
+                    #     for company in client_recent_new_bond:
+                    #         st.write(f"Company: {company}")
+
+                    st.subheader(
+                        "Recommended Companies for corresponding ISIN: ", isin_code
+                    )
                     if client_recent_new_bond is not None:
+                        donnees = []
                         for company in client_recent_new_bond:
-                            st.write(f"Company: {company}")
+                            if company is not None:
+                                company_stats = get_company_statistics(company)
+                                # if isin_stats is not None:
+                                for item in company_stats:
+                                    donnees += [item]
+                        df_company_stats = pd.DataFrame(
+                            donnees,
+                            columns=[
+                                "Company",
+                                "Total Traded Volume",
+                                "Favorite Investment Sector",
+                            ],
+                        )
+                        st.table(df_company_stats)
 
                 reset_button = st.button(
                     "Reset",
@@ -342,10 +391,31 @@ def main():
 
                 # Column 2: Company Recommendations and Statistics
                 with col2:
-                    st.subheader("Recommended Companies for ISIN:", isin_code)
+                    # st.subheader("Recommended Companies for ISIN:", isin_code)
+                    # if client_recent_new_bond is not None:
+                    #     for company in client_recent_new_bond:
+                    #         st.write(f"Company: {company}")
+
+                    st.subheader(
+                        "Recommended Companies for corresponding ISIN features"
+                    )
                     if client_recent_new_bond is not None:
+                        donnees = []
                         for company in client_recent_new_bond:
-                            st.write(f"Company: {company}")
+                            if company is not None:
+                                company_stats = get_company_statistics(company)
+                                # if isin_stats is not None:
+                                for item in company_stats:
+                                    donnees += [item]
+                        df_company_stats = pd.DataFrame(
+                            donnees,
+                            columns=[
+                                "Company",
+                                "Total Traded Volume",
+                                "Favorite Investment Sector",
+                            ],
+                        )
+                        st.table(df_company_stats)
 
                 reset_button = st.button(
                     "Reset",
