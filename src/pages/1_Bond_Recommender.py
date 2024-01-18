@@ -58,6 +58,9 @@ def set_form_mode():
     st.session_state.show_client_form = True
     st.session_state.result_mode_client = False
 
+def refresh_recommendations():
+    st.session_state.refresh_count += 1
+    st.session_state.refresh_recommendations = True
 
 def main():
     set_header_color()
@@ -106,6 +109,9 @@ def main():
 
     if st.session_state.result_mode_client:
         with placeholder.container():
+            if "refresh_count" not in st.session_state:
+                st.session_state.refresh_count = 0
+
             # Layout: Two columns
             col1, col2 = st.columns(2)
 
@@ -118,7 +124,8 @@ def main():
                 isin_to_features_dict=isin_to_features_dict,
                 features=features,
                 df_unique=df_unique,
-                n=3,
+                n=3,  # Number of recommendations to fetch
+                offset=3 * st.session_state.refresh_count  # Skip count based on refreshes
             )
 
             # Column 1: Company Search and Statistics
@@ -154,6 +161,8 @@ def main():
             reset_button = st.button(
                 "Reset", on_click=set_form_mode, key="reset_button"
             )
+
+            refresh_button = st.button("Refresh Recommendations", on_click=refresh_recommendations, key="refresh_button")
 
 
 def add_client_feedback(client_name, model_hash, recommandations):

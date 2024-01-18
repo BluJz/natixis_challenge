@@ -124,19 +124,23 @@ def recommender_isin_features(
 
 
 def recommender_client(
-    client_name, df=None, isin_to_features_dict=None, features=None, df_unique=None, n=3
+    client_name, df=None, isin_to_features_dict=None, features=None, df_unique=None, n=3, offset=0
 ):
     client_hist_apetite = client_apetite(
         client=client_name,
         recent100=False,
         df=df,
         isin_to_features=isin_to_features_dict,
-    )  # False to get historical apetite, True to get recent apetite
-    top_n_bonds = find_top_n_similar_bonds(
+    )
+    # Fetch more recommendations than needed
+    all_recommendations = find_top_n_similar_bonds(
         new_bond_features=client_hist_apetite,
         existing_features=features,
         df_unique=df_unique,
-        n=n,
+        n=n+offset,
     )
+
+    # Slice the recommendations to get the correct set
+    top_n_bonds = all_recommendations[offset:offset+n]
 
     return client_hist_apetite, top_n_bonds
